@@ -39,7 +39,7 @@ describe('P4-03 browser geo distant coverage', () => {
     const classLabels = await page.locator('.result-class-label').allTextContents();
     assert.ok(!classLabels.some((label) => /Nearby library to ask/i.test(label)));
     const zip = await page.locator('#zip-input').inputValue();
-    assert.notEqual(zip, '90210');
+    assert.equal(zip, '');
 
     await browser.close();
   });
@@ -148,8 +148,8 @@ describe('P5-05 browser geo near 90210 skips no-source centroid', () => {
     await page.waitForSelector('.result-card');
 
     const zip = await page.locator('#zip-input').inputValue();
-    assert.notEqual(zip, '90210');
-    assert.ok(['01103', '72653'].includes(zip), `unexpected telescope GEO zip: ${zip}`);
+    assert.equal(zip, '');
+    assert.match(await page.locator('.result-card').first().innerText(), /Library Telescope Program|Baxter County Library/i);
 
     await browser.close();
   });
@@ -173,8 +173,7 @@ describe('P6-02 browser object-aware GEO avoids Fort Payne fallback', () => {
     await page.waitForSelector('.result-card');
 
     const zip = await page.locator('#zip-input').inputValue();
-    assert.notEqual(zip, '35967');
-    assert.equal(zip, '16693');
+    assert.equal(zip, '');
 
     const status = await page.locator('#status-message').textContent();
     assert.match(status, /closest reviewed source area for this search/i);
@@ -207,6 +206,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     await page.waitForSelector('.result-card');
 
     assert.match(await page.locator('.result-card').first().innerText(), /Laverne Schell Tool Library/i);
+    assert.equal(await page.locator('#zip-input').inputValue(), '');
     await page.screenshot({
       path: '/workspace/evidence/pass008-mobile-springfield-pressure-washer-geo.png',
       fullPage: true,
@@ -257,6 +257,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     await page.waitForSelector('.result-card');
 
     assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
+    assert.equal(await page.locator('#zip-input').inputValue(), '');
     await page.screenshot({
       path: '/workspace/evidence/pass008-mobile-mountain-home-telescope-geo.png',
       fullPage: true,
@@ -274,6 +275,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     await page.waitForSelector('.result-card');
 
     assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
+    assert.equal(await page.locator('#zip-input').inputValue(), '72653');
     await page.screenshot({
       path: '/workspace/evidence/pass008-mobile-72653-fishing-pole-zip.png',
       fullPage: true,

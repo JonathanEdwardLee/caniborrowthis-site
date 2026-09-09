@@ -167,7 +167,7 @@ locateBtn.addEventListener('click', () => {
       if (target.kind === 'zip') {
         activeZip = target.zip;
         lastGeoDistanceMi = target.distanceMi;
-        zipInput.value = target.zip;
+        zipInput.value = '';
         pendingGeoContext = formatGeoCoverageContext(target.label, target.distanceMi);
       } else if (target.kind === 'national') {
         zipInput.value = '';

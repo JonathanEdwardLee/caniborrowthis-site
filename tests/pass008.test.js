@@ -182,6 +182,14 @@ describe('P8-09 Pass-006 GEO regressions preserved', () => {
   });
 });
 
+describe('P8-11 GEO does not present internal routing ZIP as detected ZIP', () => {
+  it('app.js keeps visible ZIP blank on GEO zip routing', async () => {
+    const appJs = await readFile(join(root, 'js', 'app.js'), 'utf8');
+    assert.doesNotMatch(appJs, /zipInput\.value = target\.zip/);
+    assert.match(appJs, /zipInput\.value = ''/);
+  });
+});
+
 describe('P8-10 pass008 release identity, dependency state, and accessibility', () => {
   it('index.html and runtime imports use pass008', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
