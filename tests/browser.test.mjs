@@ -112,7 +112,7 @@ describe('P5-04 browser release marker and distant geo verification', () => {
     await page.goto(ctx.baseUrl);
     const marker = await page.locator('#cibt-release-marker');
     assert.equal(await marker.getAttribute('data-release'), 'pass005');
-    assert.match(await marker.getAttribute('data-commit'), /^[0-9a-f]+$/);
+    assert.equal(await marker.getAttribute('data-commit'), null);
 
     const metaRelease = await page.locator('meta[name="cibt-release"]').getAttribute('content');
     assert.equal(metaRelease, 'pass005');

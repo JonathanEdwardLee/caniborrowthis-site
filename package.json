@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "stamp-release": "node scripts/stamp-release.mjs",
-    "test": "npm run stamp-release && npm run test:unit && npm run test:browser",
+    "test": "npm run test:unit && npm run test:browser",
     "test:unit": "node --test tests/**/*.test.js",
     "test:browser": "node --test tests/browser.test.mjs",
     "capture-evidence": "node tests/capture-evidence.mjs",

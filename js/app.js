@@ -9,7 +9,6 @@ import { CIBT_RELEASE } from './release.js?v=pass005';
 const releaseMarker = document.getElementById('cibt-release-marker');
 if (releaseMarker) {
   releaseMarker.dataset.release = CIBT_RELEASE.pass;
-  releaseMarker.dataset.commit = CIBT_RELEASE.commit;
 }
 
 const form = document.getElementById('search-form');

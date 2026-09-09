@@ -46,11 +46,21 @@ describe('P5-02 versioned static asset references', () => {
     assert.match(html, /src="js\/app\.js\?v=pass005"/);
   });
 
-  it('module graph imports use pass005 version query', async () => {
-    const appJs = await readFile(join(root, 'js', 'app.js'), 'utf8');
-    const searchJs = await readFile(join(root, 'js', 'search.js'), 'utf8');
-    assert.match(appJs, /from '\.\/search\.js\?v=pass005'/);
-    assert.match(searchJs, /from '\.\/geo\.js\?v=pass005'/);
+  it('every relative runtime .js import uses pass005 version query', async () => {
+    const importPattern = /from\s+['"](\.\/[^'"]+\.js(?:\?[^'"]*)?)['"]/g;
+    const jsEntries = await readdir(JS_DIR);
+
+    for (const name of jsEntries.filter((entry) => entry.endsWith('.js'))) {
+      const relPath = join('js', name);
+      const content = await readFile(join(root, relPath), 'utf8');
+      for (const [, specifier] of content.matchAll(importPattern)) {
+        assert.match(
+          specifier,
+          /\.js\?v=pass005$/,
+          `${relPath} import "${specifier}" must use ?v=pass005`,
+        );
+      }
+    }
   });
 });
 
@@ -58,15 +68,15 @@ describe('P5-03 machine-readable release marker', () => {
   it('index.html exposes pass005 release meta and hidden DOM marker', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
     assert.match(html, /<meta name="cibt-release" content="pass005">/);
-    assert.match(html, /<meta name="cibt-release-commit" content="[0-9a-f]+">/);
+    assert.doesNotMatch(html, /cibt-release-commit/);
     assert.match(html, /id="cibt-release-marker"[^>]*data-release="pass005"/);
-    assert.match(html, /data-commit="[0-9a-f]+"/);
+    assert.doesNotMatch(html, /data-commit=/);
   });
 
-  it('release.js exports pass005 identity', () => {
+  it('release.js exports pass005 identity without commit stamp', () => {
     assert.equal(CIBT_RELEASE.pass, 'pass005');
     assert.equal(CIBT_RELEASE.version, 'pass005');
-    assert.match(CIBT_RELEASE.commit, /^[0-9a-f]+$/);
+    assert.equal(CIBT_RELEASE.commit, undefined);
   });
 });
 
