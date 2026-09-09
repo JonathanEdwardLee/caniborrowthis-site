@@ -93,7 +93,7 @@ export const SOURCES = [
     geographyZips: ['16693'],
     objectClasses: null,
     objectRelevance: 'NONE_ASSERTED',
-    note: 'Generic library fallback only when no accepted relevant source applies.',
+    note: 'Generic nearby-library fallback to ask/check; no object relevance or availability is asserted.',
     reviewDate: '2026-09-08',
   },
 ];
