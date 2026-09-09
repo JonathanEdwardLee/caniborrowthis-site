@@ -41,9 +41,6 @@ describe('P4-03 browser geo distant coverage', () => {
     const zip = await page.locator('#zip-input').inputValue();
     assert.notEqual(zip, '90210');
 
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.screenshot({ path: '/workspace/evidence/pass004-mobile-geo-distant.png', fullPage: true });
-
     await browser.close();
   });
 });
