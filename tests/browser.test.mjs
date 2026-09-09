@@ -96,7 +96,7 @@ describe('SC-08 browser geolocation denied', () => {
 });
 
 describe('P5-04 browser release marker and distant geo verification', () => {
-  it('exposes pass006 marker and continues distant geo search without outside-limit dead end', async () => {
+  it('exposes pass008 marker and continues distant geo search without outside-limit dead end', async () => {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -109,11 +109,11 @@ describe('P5-04 browser release marker and distant geo verification', () => {
 
     await page.goto(ctx.baseUrl);
     const marker = await page.locator('#cibt-release-marker');
-    assert.equal(await marker.getAttribute('data-release'), 'pass006');
+    assert.equal(await marker.getAttribute('data-release'), 'pass008');
     assert.equal(await marker.getAttribute('data-commit'), null);
 
     const metaRelease = await page.locator('meta[name="cibt-release"]').getAttribute('content');
-    assert.equal(metaRelease, 'pass006');
+    assert.equal(metaRelease, 'pass008');
 
     await page.fill('#object-input', 'OBD-II scanner');
     await page.click('#locate-btn');
@@ -125,9 +125,6 @@ describe('P5-04 browser release marker and distant geo verification', () => {
     assert.doesNotMatch(status, /outside/i);
     assert.ok((await page.locator('.result-card').count()) >= 1);
     assert.equal(await page.locator('.result-distance').count(), 0);
-
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.screenshot({ path: '/workspace/evidence/pass006-mobile-geo-distant.png', fullPage: true });
 
     await browser.close();
   });
@@ -152,7 +149,7 @@ describe('P5-05 browser geo near 90210 skips no-source centroid', () => {
 
     const zip = await page.locator('#zip-input').inputValue();
     assert.notEqual(zip, '90210');
-    assert.ok(['16693', '19601', '35967', '01103'].includes(zip));
+    assert.ok(['01103', '72653'].includes(zip), `unexpected telescope GEO zip: ${zip}`);
 
     await browser.close();
   });
@@ -188,12 +185,99 @@ describe('P6-02 browser object-aware GEO avoids Fort Payne fallback', () => {
     assert.ok(classLabels.some((label) => /Relevant borrowing program/i.test(label)));
     assert.ok(!classLabels.some((label) => /Nearby library to ask/i.test(label)));
 
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.screenshot({
-      path: '/workspace/evidence/pass006-mobile-geo-object-aware.png',
-      fullPage: true,
+    await browser.close();
+  });
+});
+
+describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
+  it('Springfield GEO pressure washer routes to S7', async () => {
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage({ viewport: { width: 390, height: 844 } });
+
+    await page.addInitScript(() => {
+      navigator.geolocation.getCurrentPosition = (success) => {
+        success({ coords: { latitude: 37.208957, longitude: -93.292298 } });
+      };
     });
 
+    await page.goto(ctx.baseUrl);
+    await page.fill('#object-input', 'pressure washer');
+    await page.click('#locate-btn');
+    await page.waitForSelector('.result-card');
+
+    assert.match(await page.locator('.result-card').first().innerText(), /Laverne Schell Tool Library/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass008-mobile-springfield-pressure-washer-geo.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+
+  it('Springfield GEO 3D printer routes to S8 with on-site wording', async () => {
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage({ viewport: { width: 390, height: 844 } });
+
+    await page.addInitScript(() => {
+      navigator.geolocation.getCurrentPosition = (success) => {
+        success({ coords: { latitude: 37.208957, longitude: -93.292298 } });
+      };
+    });
+
+    await page.goto(ctx.baseUrl);
+    await page.fill('#object-input', '3D printer');
+    await page.click('#locate-btn');
+    await page.waitForSelector('.result-card');
+
+    const cardText = await page.locator('.result-card').first().innerText();
+    assert.match(cardText, /Maker Space/i);
+    assert.match(cardText, /On-site equipment resource — not a take-home loan/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass008-mobile-springfield-3d-printer-geo.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+
+  it('Mountain Home GEO telescope routes to S9', async () => {
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage({ viewport: { width: 390, height: 844 } });
+
+    await page.addInitScript(() => {
+      navigator.geolocation.getCurrentPosition = (success) => {
+        success({ coords: { latitude: 36.335376, longitude: -92.385254 } });
+      };
+    });
+
+    await page.goto(ctx.baseUrl);
+    await page.fill('#object-input', 'telescope');
+    await page.click('#locate-btn');
+    await page.waitForSelector('.result-card');
+
+    assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass008-mobile-mountain-home-telescope-geo.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+
+  it('ZIP 72653 fishing pole manual search routes to S9', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.goto(ctx.baseUrl);
+    await page.fill('#object-input', 'fishing pole');
+    await page.fill('#zip-input', '72653');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+
+    assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass008-mobile-72653-fishing-pole-zip.png',
+      fullPage: true,
+    });
     await browser.close();
   });
 });
