@@ -96,7 +96,7 @@ describe('SC-08 browser geolocation denied', () => {
 });
 
 describe('P5-04 browser release marker and distant geo verification', () => {
-  it('exposes pass008 marker and continues distant geo search without outside-limit dead end', async () => {
+  it('exposes pass009 marker and continues distant geo search without outside-limit dead end', async () => {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -109,11 +109,11 @@ describe('P5-04 browser release marker and distant geo verification', () => {
 
     await page.goto(ctx.baseUrl);
     const marker = await page.locator('#cibt-release-marker');
-    assert.equal(await marker.getAttribute('data-release'), 'pass008');
+    assert.equal(await marker.getAttribute('data-release'), 'pass009');
     assert.equal(await marker.getAttribute('data-commit'), null);
 
     const metaRelease = await page.locator('meta[name="cibt-release"]').getAttribute('content');
-    assert.equal(metaRelease, 'pass008');
+    assert.equal(metaRelease, 'pass009');
 
     await page.fill('#object-input', 'OBD-II scanner');
     await page.click('#locate-btn');
@@ -208,7 +208,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(await page.locator('.result-card').first().innerText(), /Laverne Schell Tool Library/i);
     assert.equal(await page.locator('#zip-input').inputValue(), '');
     await page.screenshot({
-      path: '/workspace/evidence/pass008-mobile-springfield-pressure-washer-geo.png',
+      path: '/workspace/evidence/pass009-mobile-springfield-pressure-washer-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -234,7 +234,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(cardText, /Maker Space/i);
     assert.match(cardText, /On-site equipment resource — not a take-home loan/i);
     await page.screenshot({
-      path: '/workspace/evidence/pass008-mobile-springfield-3d-printer-geo.png',
+      path: '/workspace/evidence/pass009-mobile-springfield-3d-printer-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -259,7 +259,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
     assert.equal(await page.locator('#zip-input').inputValue(), '');
     await page.screenshot({
-      path: '/workspace/evidence/pass008-mobile-mountain-home-telescope-geo.png',
+      path: '/workspace/evidence/pass009-mobile-mountain-home-telescope-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -277,7 +277,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
     assert.equal(await page.locator('#zip-input').inputValue(), '72653');
     await page.screenshot({
-      path: '/workspace/evidence/pass008-mobile-72653-fishing-pole-zip.png',
+      path: '/workspace/evidence/pass009-mobile-72653-fishing-pole-zip.png',
       fullPage: true,
     });
     await browser.close();

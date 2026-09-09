@@ -40,13 +40,13 @@ describe('P5-01 no retired outside-limit geo dead end', () => {
 });
 
 describe('P5-02 versioned static asset references', () => {
-  it('index.html requests pass008-versioned CSS and entry JS', async () => {
+  it('index.html requests pass009-versioned CSS and entry JS', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /href="css\/styles\.css\?v=pass008"/);
-    assert.match(html, /src="js\/app\.js\?v=pass008"/);
+    assert.match(html, /href="css\/styles\.css\?v=pass009"/);
+    assert.match(html, /src="js\/app\.js\?v=pass009"/);
   });
 
-  it('every relative runtime .js import uses pass008 version query', async () => {
+  it('every relative runtime .js import uses pass009 version query', async () => {
     const importPattern = /from\s+['"](\.\/[^'"]+\.js(?:\?[^'"]*)?)['"]/g;
     const jsEntries = await readdir(JS_DIR);
 
@@ -56,8 +56,8 @@ describe('P5-02 versioned static asset references', () => {
       for (const [, specifier] of content.matchAll(importPattern)) {
         assert.match(
           specifier,
-          /\.js\?v=pass008$/,
-          `${relPath} import "${specifier}" must use ?v=pass008`,
+          /\.js\?v=pass009$/,
+          `${relPath} import "${specifier}" must use ?v=pass009`,
         );
       }
     }
@@ -65,17 +65,17 @@ describe('P5-02 versioned static asset references', () => {
 });
 
 describe('P5-03 machine-readable release marker', () => {
-  it('index.html exposes pass008 release meta and hidden DOM marker', async () => {
+  it('index.html exposes pass009 release meta and hidden DOM marker', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /<meta name="cibt-release" content="pass008">/);
+    assert.match(html, /<meta name="cibt-release" content="pass009">/);
     assert.doesNotMatch(html, /cibt-release-commit/);
-    assert.match(html, /id="cibt-release-marker"[^>]*data-release="pass008"/);
+    assert.match(html, /id="cibt-release-marker"[^>]*data-release="pass009"/);
     assert.doesNotMatch(html, /data-commit=/);
   });
 
-  it('release.js exports pass008 identity without commit stamp', () => {
-    assert.equal(CIBT_RELEASE.pass, 'pass008');
-    assert.equal(CIBT_RELEASE.version, 'pass008');
+  it('release.js exports pass009 identity without commit stamp', () => {
+    assert.equal(CIBT_RELEASE.pass, 'pass009');
+    assert.equal(CIBT_RELEASE.version, 'pass009');
     assert.equal(CIBT_RELEASE.commit, undefined);
   });
 });
