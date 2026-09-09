@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="google-site-verification" content="ZbhXy9475qUe4S8blHG_lYVH73bHf98-3_m3wh6ww24">
-  <meta name="cibt-release" content="pass009">
+  <meta name="cibt-release" content="pass010">
   <title>Can I Borrow This</title>
-  <link rel="stylesheet" href="css/styles.css?v=pass009">
+  <link rel="stylesheet" href="css/styles.css?v=pass010">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XH5G18F3V2"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -16,7 +16,7 @@
   </script>
 </head>
 <body>
-  <div id="cibt-release-marker" hidden data-release="pass009" aria-hidden="true"></div>
+  <div id="cibt-release-marker" hidden data-release="pass010" aria-hidden="true"></div>
   <header class="site-header">
     <h1>Can I Borrow This</h1>
     <p class="tagline">Find places to check for borrowing.</p>
@@ -27,15 +27,7 @@
     <form id="search-form" class="search-form" novalidate>
       <div class="field">
         <label for="object-input">What do you want to borrow?</label>
-        <p class="search-ideas" id="search-ideas">Try: sewing machine, telescope, OBD-II scanner, binoculars, electricity usage meter, mobile hotspot, science kit, or guitar.</p>
-        <input
-          id="object-input"
-          name="object"
-          type="text"
-          autocomplete="off"
-          placeholder="e.g. sewing machine"
-          required
-        >
+        <select id="object-input" name="object" required></select>
       </div>
 
       <div class="field">
@@ -62,6 +54,21 @@
     <div id="status-message" class="status-message" hidden role="alert" aria-live="polite"></div>
     <div id="disclaimers" class="disclaimers" hidden></div>
     <section id="results" class="results" aria-live="polite"></section>
+
+    <section id="cibt-explainer" class="cibt-explainer" aria-labelledby="explainer-heading">
+      <h2 id="explainer-heading">How Can I Borrow This works</h2>
+      <p>Can I Borrow This helps you find reviewed libraries and borrowing programs that may lend or provide access to useful items near you. We link to official sources so you can check what is available, who can use it, and how to borrow.</p>
+      <h3>What is a Library of Things?</h3>
+      <p>A Library of Things is a library or community program that lends useful items — not just books. Many public libraries, tool libraries, and special collections lend equipment for home projects, hobbies, learning, and everyday needs.</p>
+      <h3>Examples we currently review</h3>
+      <p>Our reviewed list includes items such as telescopes, sewing machines, OBD-II scanners, science kits, guitars, pressure washers, 3D printers, fishing poles, and other home, garden, hobby, and maker-space equipment. Choose one from the menu above to search supported categories only.</p>
+      <h3>Where results come from</h3>
+      <p>Results may include tool libraries, library special collections, statewide Library of Things search tools, specialist programs such as the Library Telescope Program, and nearby libraries to ask when no specific match is known yet. Some maker-space resources are on-site equipment — not take-home loans.</p>
+      <h3>Check the source before you go</h3>
+      <p>Availability, eligibility, and loan rules change. A ZIP code or location match does not guarantee you can borrow a specific item. Always use the linked source to confirm current inventory, residency requirements, fees, and checkout rules.</p>
+      <h3>Borrow before you buy</h3>
+      <p>Borrowing can be a practical way to try something once, finish a one-time project, or avoid buying gear you may use rarely. Can I Borrow This is meant to help you find where to check — not to promise that an item is waiting on the shelf.</p>
+    </section>
   </main>
 
   <footer class="site-footer">
@@ -69,6 +76,6 @@
     <p class="analytics-disclosure">This site uses Google Analytics to understand how visitors use the site and improve its usefulness. Google may collect information such as device, browser, page-view, and interaction data. Can I Borrow This does not intentionally send your search text, ZIP code, or precise location to Google Analytics.</p>
   </footer>
 
-  <script type="module" src="js/app.js?v=pass009"></script>
+  <script type="module" src="js/app.js?v=pass010"></script>
 </body>
 </html>

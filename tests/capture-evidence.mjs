@@ -15,7 +15,7 @@ await page.setViewportSize({ width: 1280, height: 900 });
 await page.goto(ctx.baseUrl);
 await page.screenshot({ path: join(evidenceDir, 'desktop-initial.png'), fullPage: true });
 
-await page.fill('#object-input', 'sewing machine');
+await page.selectOption('#object-input', 'sewing machine');
 await page.fill('#zip-input', '16693');
 await page.click('button[type="submit"]');
 await page.waitForSelector('.result-card');
@@ -23,7 +23,6 @@ await page.screenshot({ path: join(evidenceDir, 'desktop-sc01-results.png'), ful
 
 await page.setViewportSize({ width: 390, height: 844 });
 await page.goto(ctx.baseUrl);
-await page.fill('#object-input', 'telescope');
 await page.fill('#zip-input', '01103');
 await page.click('button[type="submit"]');
 await page.waitForSelector('.result-card');

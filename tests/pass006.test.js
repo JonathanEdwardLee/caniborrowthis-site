@@ -219,6 +219,7 @@ describe('P6-08 ranking privacy accessibility regressions', () => {
   it('index.html retains labeled inputs and viewport', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
     assert.match(html, /for="object-input"/);
+    assert.match(html, /<select id="object-input"/);
     assert.match(html, /for="zip-input"/);
     assert.match(html, /viewport/);
   });
@@ -238,14 +239,14 @@ describe('P6-10 object-aware distant GEO context copy', () => {
   });
 });
 
-describe('P6-09 pass009 release identity and versioned assets', () => {
-  it('index.html requests pass009-versioned CSS and entry JS', async () => {
+describe('P6-09 pass010 release identity and versioned assets', () => {
+  it('index.html requests pass010-versioned CSS and entry JS', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /href="css\/styles\.css\?v=pass009"/);
-    assert.match(html, /src="js\/app\.js\?v=pass009"/);
+    assert.match(html, /href="css\/styles\.css\?v=pass010"/);
+    assert.match(html, /src="js\/app\.js\?v=pass010"/);
   });
 
-  it('every relative runtime .js import uses pass009 version query', async () => {
+  it('every relative runtime .js import uses pass010 version query', async () => {
     const importPattern = /from\s+['"](\.\/[^'"]+\.js(?:\?[^'"]*)?)['"]/g;
     const jsEntries = await readdir(JS_DIR);
 
@@ -255,22 +256,22 @@ describe('P6-09 pass009 release identity and versioned assets', () => {
       for (const [, specifier] of content.matchAll(importPattern)) {
         assert.match(
           specifier,
-          /\.js\?v=pass009$/,
-          `${relPath} import "${specifier}" must use ?v=pass009`,
+          /\.js\?v=pass010$/,
+          `${relPath} import "${specifier}" must use ?v=pass010`,
         );
       }
     }
   });
 
-  it('index.html exposes pass009 release meta and hidden DOM marker', async () => {
+  it('index.html exposes pass010 release meta and hidden DOM marker', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /<meta name="cibt-release" content="pass009">/);
-    assert.match(html, /id="cibt-release-marker"[^>]*data-release="pass009"/);
+    assert.match(html, /<meta name="cibt-release" content="pass010">/);
+    assert.match(html, /id="cibt-release-marker"[^>]*data-release="pass010"/);
   });
 
-  it('release.js exports pass009 identity without commit stamp', () => {
-    assert.equal(CIBT_RELEASE.pass, 'pass009');
-    assert.equal(CIBT_RELEASE.version, 'pass009');
+  it('release.js exports pass010 identity without commit stamp', () => {
+    assert.equal(CIBT_RELEASE.pass, 'pass010');
+    assert.equal(CIBT_RELEASE.version, 'pass010');
     assert.equal(CIBT_RELEASE.commit, undefined);
   });
 });

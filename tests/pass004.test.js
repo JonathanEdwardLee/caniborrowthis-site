@@ -27,9 +27,11 @@ describe('P4-01 no public pilot/prototype language', () => {
 });
 
 describe('P4-02 intro examples are source-backed only', () => {
-  it('lists supported examples and excludes pressure washer', async () => {
+  it('selector lists supported reviewed object families only', async () => {
+    const { OBJECT_OPTIONS } = await import('../js/object-options.js');
     const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-    const ideas = html.match(/id="search-ideas"[^>]*>([^<]+)/)?.[1] ?? '';
+    assert.match(html, /<select id="object-input"/);
+    assert.doesNotMatch(html, /id="search-ideas"/);
     for (const term of [
       'sewing machine',
       'telescope',
@@ -40,9 +42,12 @@ describe('P4-02 intro examples are source-backed only', () => {
       'science kit',
       'guitar',
     ]) {
-      assert.match(ideas, new RegExp(term, 'i'));
+      assert.ok(
+        OBJECT_OPTIONS.some((opt) => opt.value === term),
+        `missing supported option ${term}`,
+      );
     }
-    assert.doesNotMatch(ideas, /pressure washer/i);
+    assert.ok(!OBJECT_OPTIONS.some((opt) => /chainsaw/i.test(opt.value)));
   });
 });
 
@@ -132,6 +137,7 @@ describe('P4-09 accessibility structure', () => {
   it('index.html retains labeled inputs and viewport', async () => {
     const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
     assert.match(html, /for="object-input"/);
+    assert.match(html, /<select id="object-input"/);
     assert.match(html, /for="zip-input"/);
     assert.match(html, /viewport/);
   });

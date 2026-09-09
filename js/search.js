@@ -1,10 +1,10 @@
-import { SOURCES, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass009';
-import { normalizeObject } from './normalize.js?v=pass009';
-import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass009';
+import { SOURCES, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass010';
+import { normalizeObject } from './normalize.js?v=pass010';
+import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass010';
 import {
   measureSearchSubmitted,
   measureResultsRendered,
-} from './measure.js?v=pass009';
+} from './measure.js?v=pass010';
 
 const CLASS_RANK = {
   [RESULT_CLASS.RELEVANT]: 1,
