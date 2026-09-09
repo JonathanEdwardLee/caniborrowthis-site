@@ -1,5 +1,32 @@
 /** Frozen pilot ZIP centroids — only these are supported. */
+const SPRINGFIELD_MO_CENTROID = { label: 'Springfield, MO', lat: 37.208957, lon: -93.292298 };
+
+/** Springfield-resident program baseline ZIPs (excludes Christian/Webster County Springfield mailing ZIPs). */
+export const SPRINGFIELD_MO_ZIPS = [
+  '65801',
+  '65802',
+  '65803',
+  '65804',
+  '65805',
+  '65806',
+  '65807',
+  '65808',
+  '65809',
+  '65810',
+  '65814',
+  '65817',
+  '65890',
+  '65898',
+  '65899',
+];
+
+const SPRINGFIELD_MO_PILOT_ZIPS = Object.fromEntries(
+  SPRINGFIELD_MO_ZIPS.map((zip) => [zip, { ...SPRINGFIELD_MO_CENTROID }]),
+);
+
 export const PILOT_ZIPS = {
+  ...SPRINGFIELD_MO_PILOT_ZIPS,
+  '72653': { label: 'Mountain Home, AR', lat: 36.335376, lon: -92.385254 },
   '16693': { label: 'Williamsburg, PA', lat: 40.4524, lon: -78.2389 },
   '19601': { label: 'Reading, PA', lat: 40.35, lon: -75.94 },
   '35967': { label: 'Fort Payne, AL', lat: 34.4071, lon: -85.7046 },
@@ -95,5 +122,69 @@ export const SOURCES = [
     objectRelevance: 'NONE_ASSERTED',
     note: 'Generic nearby-library fallback to ask/check; no object relevance or availability is asserted.',
     reviewDate: '2026-09-08',
+  },
+  {
+    id: 'S7_SPRINGFIELD_TOOL_LIBRARY',
+    class: RESULT_CLASS.RELEVANT,
+    url: 'https://commpartnership.myturn.com/library/inventory/browse',
+    title: 'Laverne Schell Tool Library — Springfield Tool Lending',
+    geographyZips: SPRINGFIELD_MO_ZIPS,
+    objectClasses: [
+      'PRESSURE_WASHER',
+      'WET_DRY_VACUUM',
+      'LADDER',
+      'AIR_COMPRESSOR',
+      'CIRCULAR_SAW',
+      'RECIPROCATING_SAW',
+      'JIG_SAW',
+      'SANDER',
+      'HEDGE_TRIMMER',
+      'TILLER',
+      'GARDEN_TOOL',
+      'POWER_TOOL',
+      'HOME_REPAIR_TOOL',
+    ],
+    note:
+      'Springfield home-repair/gardening/tool-lending program; browse current inventory — do not claim a specific tool is available. Program eligibility applies to Springfield residents/community groups; a ZIP code alone does not prove eligibility.',
+    reviewDate: '2026-09-09',
+  },
+  {
+    id: 'S8_SPRINGFIELD_MAKER_SPACE',
+    class: RESULT_CLASS.RESOURCE,
+    url: 'https://www.thelibrary.org/maker-space',
+    title: 'Springfield-Greene County Library Maker Space',
+    geographyZips: SPRINGFIELD_MO_ZIPS,
+    objectClasses: [
+      'THREE_D_PRINTER',
+      'THREE_D_SCANNER',
+      'LASER_ENGRAVER',
+      'VINYL_CUTTER',
+      'SOLDERING_STATION',
+      'VIDEO_TRANSFER_EQUIPMENT',
+    ],
+    onsiteResource: true,
+    note: 'On-site maker-space equipment; check the library source for access details.',
+    reviewDate: '2026-09-09',
+  },
+  {
+    id: 'S9_BAXTER_SPECIAL_COLLECTIONS',
+    class: RESULT_CLASS.RELEVANT,
+    url: 'https://www.baxtercountylibrary.org/special-collections',
+    title: 'Baxter County Library — Special Collections',
+    geographyZips: ['72653'],
+    objectClasses: [
+      'TELESCOPE',
+      'UKULELE',
+      'FISHING_POLE',
+      'KNITTING_LOOM',
+      'PORTABLE_CD_PLAYER',
+      'PORTABLE_DVD_PLAYER',
+      'BOOK_CLUB_KIT',
+      'KIDS_ACTIVITY_TABLET',
+      'BOARD_GAME',
+    ],
+    note:
+      'Source documents these special-collection types for checkout; check the source for current availability and eligibility.',
+    reviewDate: '2026-09-09',
   },
 ];

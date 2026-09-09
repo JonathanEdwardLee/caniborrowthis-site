@@ -1,11 +1,11 @@
-import { search, MESSAGES } from './search.js?v=pass006';
-import { resolveGeoSearchTarget, formatGeoCoverageContext } from './geo.js?v=pass006';
-import { normalizeObject } from './normalize.js?v=pass006';
+import { search, MESSAGES } from './search.js?v=pass008';
+import { resolveGeoSearchTarget, formatGeoCoverageContext } from './geo.js?v=pass008';
+import { normalizeObject } from './normalize.js?v=pass008';
 import {
   measureOutboundClicked,
   measureLocationPermissionResult,
-} from './measure.js?v=pass006';
-import { CIBT_RELEASE } from './release.js?v=pass006';
+} from './measure.js?v=pass008';
+import { CIBT_RELEASE } from './release.js?v=pass008';
 
 const releaseMarker = document.getElementById('cibt-release-marker');
 if (releaseMarker) {
@@ -70,10 +70,14 @@ function renderResults(results) {
     const distanceHtml = result.distanceLabel
       ? `<p class="result-distance">${escapeHtml(result.distanceLabel)}</p>`
       : '';
+    const usageNoteHtml = result.usageNote
+      ? `<p class="result-usage-note">${escapeHtml(result.usageNote)}</p>`
+      : '';
 
     card.innerHTML = `
       <p class="result-class-label">${escapeHtml(result.classLabel)}</p>
       <h3 class="result-title">${escapeHtml(result.title)}</h3>
+      ${usageNoteHtml}
       ${distanceHtml}
       <p class="result-note">${escapeHtml(result.note)}</p>
       <p class="result-review">Reviewed ${escapeHtml(result.reviewDate)}</p>
@@ -163,7 +167,7 @@ locateBtn.addEventListener('click', () => {
       if (target.kind === 'zip') {
         activeZip = target.zip;
         lastGeoDistanceMi = target.distanceMi;
-        zipInput.value = target.zip;
+        zipInput.value = '';
         pendingGeoContext = formatGeoCoverageContext(target.label, target.distanceMi);
       } else if (target.kind === 'national') {
         zipInput.value = '';

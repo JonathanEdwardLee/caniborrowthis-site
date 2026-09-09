@@ -1,10 +1,10 @@
-import { SOURCES, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass006';
-import { normalizeObject } from './normalize.js?v=pass006';
-import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass006';
+import { SOURCES, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass008';
+import { normalizeObject } from './normalize.js?v=pass008';
+import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass008';
 import {
   measureSearchSubmitted,
   measureResultsRendered,
-} from './measure.js?v=pass006';
+} from './measure.js?v=pass008';
 
 const CLASS_RANK = {
   [RESULT_CLASS.RELEVANT]: 1,
@@ -84,6 +84,10 @@ function buildResult(source, zip) {
 
   if (source.acceptedDistanceMi?.[zip] != null) {
     result.distanceLabel = formatApproxDistance(source.acceptedDistanceMi[zip]);
+  }
+
+  if (source.onsiteResource) {
+    result.usageNote = 'On-site equipment resource — not a take-home loan.';
   }
 
   return result;
