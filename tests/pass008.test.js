@@ -190,28 +190,28 @@ describe('P8-11 GEO does not present internal routing ZIP as detected ZIP', () =
   });
 });
 
-describe('P8-10 pass008 release identity, dependency state, and accessibility', () => {
-  it('index.html and runtime imports use pass008', async () => {
+describe('P8-10 pass009 release identity, dependency state, and accessibility', () => {
+  it('index.html and runtime imports use pass009', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /cibt-release" content="pass008"/);
-    assert.match(html, /styles\.css\?v=pass008/);
-    assert.match(html, /app\.js\?v=pass008/);
+    assert.match(html, /cibt-release" content="pass009"/);
+    assert.match(html, /styles\.css\?v=pass009/);
+    assert.match(html, /app\.js\?v=pass009/);
   });
 
-  it('every relative runtime .js import uses pass008 version query', async () => {
+  it('every relative runtime .js import uses pass009 version query', async () => {
     const importPattern = /from\s+['"](\.\/[^'"]+\.js(?:\?[^'"]*)?)['"]/g;
     for (const name of (await readdir(JS_DIR)).filter((entry) => entry.endsWith('.js'))) {
       const relPath = join('js', name);
       const content = await readFile(join(root, relPath), 'utf8');
       for (const [, specifier] of content.matchAll(importPattern)) {
-        assert.match(specifier, /\.js\?v=pass008$/, `${relPath} import "${specifier}"`);
+        assert.match(specifier, /\.js\?v=pass009$/, `${relPath} import "${specifier}"`);
       }
     }
   });
 
-  it('release.js exports pass008 identity', () => {
-    assert.equal(CIBT_RELEASE.pass, 'pass008');
-    assert.equal(CIBT_RELEASE.version, 'pass008');
+  it('release.js exports pass009 identity', () => {
+    assert.equal(CIBT_RELEASE.pass, 'pass009');
+    assert.equal(CIBT_RELEASE.version, 'pass009');
   });
 
   it('Playwright remains exact 1.62.1', () => {
