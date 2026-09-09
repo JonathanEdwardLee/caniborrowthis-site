@@ -31,7 +31,8 @@ describe('P4-03 browser geo distant coverage', () => {
     await page.waitForSelector('.result-card');
 
     const status = await page.locator('#status-message').textContent();
-    assert.match(status, /closest area we currently cover/i);
+    assert.match(status, /closest reviewed source area for this search/i);
+    assert.doesNotMatch(status, /closest area we currently cover/i);
     assert.match(status, /Approx\./);
     assert.ok((await page.locator('.result-card').count()) >= 1);
     assert.equal(await page.locator('.result-distance').count(), 0);
@@ -122,7 +123,8 @@ describe('P5-04 browser release marker and distant geo verification', () => {
     await page.waitForSelector('.result-card');
 
     const status = await page.locator('#status-message').textContent();
-    assert.match(status, /closest area we currently cover/i);
+    assert.match(status, /closest reviewed source area for this search/i);
+    assert.doesNotMatch(status, /closest area we currently cover/i);
     assert.doesNotMatch(status, /outside/i);
     assert.ok((await page.locator('.result-card').count()) >= 1);
     assert.equal(await page.locator('.result-distance').count(), 0);
@@ -181,7 +183,8 @@ describe('P6-02 browser object-aware GEO avoids Fort Payne fallback', () => {
     assert.equal(zip, '16693');
 
     const status = await page.locator('#status-message').textContent();
-    assert.match(status, /closest area we currently cover/i);
+    assert.match(status, /closest reviewed source area for this search/i);
+    assert.doesNotMatch(status, /closest area we currently cover/i);
     assert.match(status, /Williamsburg/i);
 
     const classLabels = await page.locator('.result-class-label').allTextContents();

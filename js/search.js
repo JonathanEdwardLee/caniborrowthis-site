@@ -135,7 +135,7 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
       status: 'ok',
       message: MESSAGES.noLocalReviewedMatch,
       results: resources,
-      disclaimers: [MESSAGES.noLocalReviewedMatch],
+      disclaimers: [],
       objectClass,
     };
   }

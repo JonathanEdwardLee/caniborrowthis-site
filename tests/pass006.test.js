@@ -7,6 +7,7 @@ import { search, MESSAGES } from '../js/search.js';
 import {
   nearestEligibleCoverageZip,
   resolveGeoSearchTarget,
+  formatGeoCoverageContext,
   GEO_CONTEXT_THRESHOLD_MI,
 } from '../js/geo.js';
 import { normalizeObject } from '../js/normalize.js';
@@ -109,6 +110,7 @@ describe('P6-04 binoculars national-only GEO path', () => {
     });
     assert.equal(out.status, 'ok');
     assert.match(out.message, /local-area match/i);
+    assert.equal(out.disclaimers.length, 0);
     assert.ok(out.results.some((r) => r.sourceId === 'S4_LIBRARY_TELESCOPE_PROGRAM'));
     assert.ok(out.results.every((r) => r.class === RESULT_CLASS.RESOURCE));
   });
@@ -219,6 +221,20 @@ describe('P6-08 ranking privacy accessibility regressions', () => {
     assert.match(html, /for="object-input"/);
     assert.match(html, /for="zip-input"/);
     assert.match(html, /viewport/);
+  });
+});
+
+describe('P6-10 object-aware distant GEO context copy', () => {
+  it('uses truthful search-specific wording for Huntsville sewing machine', () => {
+    const target = resolveGeoSearchTarget(
+      FORT_PAYNE_NEAREST_COORDS.lat,
+      FORT_PAYNE_NEAREST_COORDS.lon,
+      'sewing machine',
+    );
+    const context = formatGeoCoverageContext(target.label, target.distanceMi);
+    assert.match(context, /closest reviewed source area for this search/i);
+    assert.doesNotMatch(context, /closest area we currently cover/i);
+    assert.match(context, /Williamsburg/i);
   });
 });
 

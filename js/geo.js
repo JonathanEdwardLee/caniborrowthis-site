@@ -158,7 +158,7 @@ export function resolveGeoSearchTarget(lat, lon, objectText) {
 
 export function formatGeoCoverageContext(label, distanceMi) {
   if (distanceMi <= GEO_CONTEXT_THRESHOLD_MI) return null;
-  return `Showing the closest area we currently cover: ${label} (${formatApproxDistance(distanceMi)} away).`;
+  return `Showing the closest reviewed source area for this search: ${label} (${formatApproxDistance(distanceMi)} away).`;
 }
 
 export function getZipCentroid(zip) {
