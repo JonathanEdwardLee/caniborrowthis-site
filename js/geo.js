@@ -1,4 +1,5 @@
-import { PILOT_ZIPS } from './data.js?v=pass005';
+import { SOURCES, RESULT_CLASS, PILOT_ZIPS } from './data.js?v=pass006';
+import { normalizeObject } from './normalize.js?v=pass006';
 
 const MILES_PER_KM = 0.621371;
 /** Show geo coverage context when user is farther than this from the centroid (straight-line). */
@@ -40,9 +41,69 @@ function isEligibleGeoDestination(zip) {
   return Boolean(info && !info.noApprovedSource);
 }
 
+function sourceMatchesObject(source, objectClass) {
+  if (!source.objectClasses) return false;
+  return source.objectClasses.includes(objectClass);
+}
+
+function isGeographyBoundObjectRelevantSource(source, objectClass) {
+  if (source.class === RESULT_CLASS.FALLBACK) return false;
+  if (source.national) return false;
+  if (!sourceMatchesObject(source, objectClass)) return false;
+  if (source.class === RESULT_CLASS.RELEVANT) return true;
+  if (source.class === RESULT_CLASS.RESOURCE && source.geographyZips?.length) return true;
+  return false;
+}
+
+function findNearestObjectRelevantZip(lat, lon, objectClass) {
+  const candidates = [];
+
+  for (const source of SOURCES) {
+    if (!isGeographyBoundObjectRelevantSource(source, objectClass)) continue;
+    for (const zip of source.geographyZips) {
+      const info = PILOT_ZIPS[zip];
+      if (!info || info.noApprovedSource) continue;
+      const distanceMi = distanceMiles(lat, lon, info.lat, info.lon);
+      candidates.push({ zip, distanceMi, label: info.label, sourceId: source.id });
+    }
+  }
+
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => a.distanceMi - b.distanceMi);
+  return candidates[0];
+}
+
+function findNearestFallbackWithinThreshold(lat, lon) {
+  let nearest = null;
+
+  for (const source of SOURCES) {
+    if (source.class !== RESULT_CLASS.FALLBACK) continue;
+    for (const zip of source.geographyZips || []) {
+      const info = PILOT_ZIPS[zip];
+      if (!info || info.noApprovedSource) continue;
+      const distanceMi = distanceMiles(lat, lon, info.lat, info.lon);
+      if (distanceMi <= GEO_CONTEXT_THRESHOLD_MI && (!nearest || distanceMi < nearest.distanceMi)) {
+        nearest = { zip, distanceMi, label: info.label };
+      }
+    }
+  }
+
+  return nearest;
+}
+
+function hasNationalResourceForObject(objectClass) {
+  return SOURCES.some(
+    (s) =>
+      s.class === RESULT_CLASS.RESOURCE &&
+      s.national &&
+      sourceMatchesObject(s, objectClass),
+  );
+}
+
 /**
  * Nearest supported ZIP centroid with approved source/fallback coverage.
  * Excludes noApprovedSource areas (e.g. 90210). No distance cutoff.
+ * Retained for regression tests; GEO click handler uses resolveGeoSearchTarget.
  */
 export function nearestEligibleCoverageZip(lat, lon) {
   let nearestZip = null;
@@ -62,6 +123,37 @@ export function nearestEligibleCoverageZip(lat, lon) {
     distanceMi: nearestDist,
     label: PILOT_ZIPS[nearestZip]?.label ?? '',
   };
+}
+
+/**
+ * Object-aware GEO routing: normalize/classify object before choosing destination.
+ * @returns {{ kind: 'zip', zip: string, distanceMi: number, label: string, objectNorm: object }
+ *         | { kind: 'national', objectClass: string, objectNorm: object }
+ *         | { kind: 'no_zip', objectNorm: object }}
+ */
+export function resolveGeoSearchTarget(lat, lon, objectText) {
+  const objectNorm = normalizeObject(objectText);
+
+  if (objectNorm.status === 'SUPPORTED') {
+    const nearestRelevant = findNearestObjectRelevantZip(lat, lon, objectNorm.objectClass);
+    if (nearestRelevant) {
+      return { kind: 'zip', ...nearestRelevant, objectNorm };
+    }
+    if (hasNationalResourceForObject(objectNorm.objectClass)) {
+      return { kind: 'national', objectClass: objectNorm.objectClass, objectNorm };
+    }
+    const nearFallback = findNearestFallbackWithinThreshold(lat, lon);
+    if (nearFallback) {
+      return { kind: 'zip', ...nearFallback, objectNorm };
+    }
+    return { kind: 'no_zip', objectNorm };
+  }
+
+  const nearFallback = findNearestFallbackWithinThreshold(lat, lon);
+  if (nearFallback) {
+    return { kind: 'zip', ...nearFallback, objectNorm };
+  }
+  return { kind: 'no_zip', objectNorm };
 }
 
 export function formatGeoCoverageContext(label, distanceMi) {

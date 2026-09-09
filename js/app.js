@@ -1,10 +1,11 @@
-import { search, MESSAGES } from './search.js?v=pass005';
-import { nearestEligibleCoverageZip, formatGeoCoverageContext } from './geo.js?v=pass005';
+import { search, MESSAGES } from './search.js?v=pass006';
+import { resolveGeoSearchTarget, formatGeoCoverageContext } from './geo.js?v=pass006';
+import { normalizeObject } from './normalize.js?v=pass006';
 import {
   measureOutboundClicked,
   measureLocationPermissionResult,
-} from './measure.js?v=pass005';
-import { CIBT_RELEASE } from './release.js?v=pass005';
+} from './measure.js?v=pass006';
+import { CIBT_RELEASE } from './release.js?v=pass006';
 
 const releaseMarker = document.getElementById('cibt-release-marker');
 if (releaseMarker) {
@@ -23,6 +24,7 @@ let activeZip = '';
 let locationMode = 'ZIP';
 let pendingGeoContext = null;
 let lastGeoDistanceMi = null;
+let geoTargetKind = undefined;
 
 function clearUI() {
   statusEl.textContent = '';
@@ -100,6 +102,7 @@ function runSearch() {
     zip,
     locationMode,
     geoDistanceMi: locationMode === 'GEO' ? lastGeoDistanceMi : undefined,
+    geoTargetKind: locationMode === 'GEO' ? geoTargetKind : undefined,
   });
 
   if (pendingGeoContext) {
@@ -128,6 +131,7 @@ form.addEventListener('submit', (e) => {
   activeZip = zipInput.value.trim();
   pendingGeoContext = null;
   lastGeoDistanceMi = null;
+  geoTargetKind = undefined;
   runSearch();
 });
 
@@ -145,15 +149,30 @@ locateBtn.addEventListener('click', () => {
     (pos) => {
       measureLocationPermissionResult({ result: 'GRANTED' });
       const { latitude, longitude } = pos.coords;
-      const nearest = nearestEligibleCoverageZip(latitude, longitude);
+      normalizeObject(objectInput.value);
+      const target = resolveGeoSearchTarget(latitude, longitude, objectInput.value);
       locateBtn.disabled = false;
       locateBtn.removeAttribute('aria-busy');
 
       locationMode = 'GEO';
-      activeZip = nearest.zip;
-      lastGeoDistanceMi = nearest.distanceMi;
-      zipInput.value = nearest.zip;
-      pendingGeoContext = formatGeoCoverageContext(nearest.label, nearest.distanceMi);
+      geoTargetKind = undefined;
+      pendingGeoContext = null;
+      lastGeoDistanceMi = null;
+      activeZip = '';
+
+      if (target.kind === 'zip') {
+        activeZip = target.zip;
+        lastGeoDistanceMi = target.distanceMi;
+        zipInput.value = target.zip;
+        pendingGeoContext = formatGeoCoverageContext(target.label, target.distanceMi);
+      } else if (target.kind === 'national') {
+        zipInput.value = '';
+        geoTargetKind = 'national';
+      } else {
+        zipInput.value = '';
+        geoTargetKind = 'no_zip';
+      }
+
       runSearch();
     },
     (err) => {

@@ -1,10 +1,10 @@
-import { SOURCES, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass005';
-import { normalizeObject } from './normalize.js?v=pass005';
-import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass005';
+import { SOURCES, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass006';
+import { normalizeObject } from './normalize.js?v=pass006';
+import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass006';
 import {
   measureSearchSubmitted,
   measureResultsRendered,
-} from './measure.js?v=pass005';
+} from './measure.js?v=pass006';
 
 const CLASS_RANK = {
   [RESULT_CLASS.RELEVANT]: 1,
@@ -26,6 +26,8 @@ const MESSAGES = {
     'Location access was denied. You can still search by entering a ZIP code.',
   geolocationUnavailable:
     'Location is unavailable. You can still search by entering a ZIP code.',
+  noLocalReviewedMatch:
+    "We don't have a reviewed local-area match for this object yet. The resource below may help you search more broadly.",
 };
 
 function sourceMatchesObject(source, objectClass) {
@@ -89,9 +91,96 @@ function buildResult(source, zip) {
 
 /**
  * Core search logic — pure function for testability.
- * @param {{ objectText: string, zip: string, locationMode?: 'ZIP' | 'GEO', geoDistanceMi?: number }} input
+ * @param {{ objectText: string, zip: string, locationMode?: 'ZIP' | 'GEO', geoDistanceMi?: number, geoTargetKind?: 'national' | 'no_zip' }} input
  */
-export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi }) {
+export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, geoTargetKind }) {
+  if (locationMode === 'GEO' && geoTargetKind === 'national') {
+    const objectNorm = normalizeObject(objectText);
+    if (objectNorm.status !== 'SUPPORTED') {
+      return {
+        status: 'ok',
+        message: MESSAGES.noNearbyEvidence,
+        results: [],
+        disclaimers: [
+          objectNorm.status === 'UNSUPPORTED'
+            ? MESSAGES.unsupportedObject
+            : MESSAGES.unrecognizedObject,
+        ],
+        objectClass: null,
+      };
+    }
+
+    const objectClass = objectNorm.objectClass;
+    measureSearchSubmitted({
+      objectClass,
+      locationMode,
+      coverageState: 'SUPPORTED',
+    });
+
+    const resources = SOURCES.filter(
+      (s) =>
+        s.class === RESULT_CLASS.RESOURCE &&
+        s.national &&
+        sourceMatchesObject(s, objectClass),
+    ).map((s) => buildResult(s, null));
+
+    measureResultsRendered({
+      relevant: 0,
+      resource: resources.length,
+      fallback: 0,
+      none: resources.length === 0 ? 1 : 0,
+    });
+
+    return {
+      status: 'ok',
+      message: MESSAGES.noLocalReviewedMatch,
+      results: resources,
+      disclaimers: [MESSAGES.noLocalReviewedMatch],
+      objectClass,
+    };
+  }
+
+  if (locationMode === 'GEO' && geoTargetKind === 'no_zip') {
+    const objectNorm = normalizeObject(objectText);
+
+    measureSearchSubmitted({
+      objectClass: objectNorm.status === 'SUPPORTED' ? objectNorm.objectClass : 'UNSUPPORTED',
+      locationMode,
+      coverageState: objectNorm.status === 'SUPPORTED' ? 'SUPPORTED' : 'UNSUPPORTED',
+    });
+
+    if (objectNorm.status === 'UNSUPPORTED') {
+      measureResultsRendered({ relevant: 0, resource: 0, fallback: 0, none: 1 });
+      return {
+        status: 'ok',
+        message: MESSAGES.noNearbyEvidence,
+        results: [],
+        disclaimers: [MESSAGES.unsupportedObject],
+        objectClass: null,
+      };
+    }
+
+    if (objectNorm.status === 'UNRECOGNIZED') {
+      measureResultsRendered({ relevant: 0, resource: 0, fallback: 0, none: 1 });
+      return {
+        status: 'ok',
+        message: MESSAGES.noNearbyEvidence,
+        results: [],
+        disclaimers: [MESSAGES.unrecognizedObject],
+        objectClass: null,
+      };
+    }
+
+    measureResultsRendered({ relevant: 0, resource: 0, fallback: 0, none: 1 });
+    return {
+      status: 'ok',
+      message: MESSAGES.noNearbyEvidence,
+      results: [],
+      disclaimers: [MESSAGES.noRelevantSource],
+      objectClass: objectNorm.objectClass,
+    };
+  }
+
   const zipResult = validateZip(zip);
 
   if (zipResult.status === 'INVALID') {

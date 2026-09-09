@@ -98,7 +98,7 @@ describe('SC-08 browser geolocation denied', () => {
 });
 
 describe('P5-04 browser release marker and distant geo verification', () => {
-  it('exposes pass005 marker and continues distant geo search without outside-limit dead end', async () => {
+  it('exposes pass006 marker and continues distant geo search without outside-limit dead end', async () => {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -111,11 +111,11 @@ describe('P5-04 browser release marker and distant geo verification', () => {
 
     await page.goto(ctx.baseUrl);
     const marker = await page.locator('#cibt-release-marker');
-    assert.equal(await marker.getAttribute('data-release'), 'pass005');
+    assert.equal(await marker.getAttribute('data-release'), 'pass006');
     assert.equal(await marker.getAttribute('data-commit'), null);
 
     const metaRelease = await page.locator('meta[name="cibt-release"]').getAttribute('content');
-    assert.equal(metaRelease, 'pass005');
+    assert.equal(metaRelease, 'pass006');
 
     await page.fill('#object-input', 'OBD-II scanner');
     await page.click('#locate-btn');
@@ -128,7 +128,7 @@ describe('P5-04 browser release marker and distant geo verification', () => {
     assert.equal(await page.locator('.result-distance').count(), 0);
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.screenshot({ path: '/workspace/evidence/pass005-mobile-geo-distant.png', fullPage: true });
+    await page.screenshot({ path: '/workspace/evidence/pass006-mobile-geo-distant.png', fullPage: true });
 
     await browser.close();
   });
@@ -154,6 +154,45 @@ describe('P5-05 browser geo near 90210 skips no-source centroid', () => {
     const zip = await page.locator('#zip-input').inputValue();
     assert.notEqual(zip, '90210');
     assert.ok(['16693', '19601', '35967', '01103'].includes(zip));
+
+    await browser.close();
+  });
+});
+
+describe('P6-02 browser object-aware GEO avoids Fort Payne fallback', () => {
+  it('selects nearest reviewed sewing path instead of fallback-only 35967', async () => {
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    await page.addInitScript(() => {
+      navigator.geolocation.getCurrentPosition = (success) => {
+        success({ coords: { latitude: 34.7304, longitude: -86.5861 } });
+      };
+    });
+
+    await page.goto(ctx.baseUrl);
+    await page.fill('#object-input', 'sewing machine');
+    await page.click('#locate-btn');
+    await page.waitForSelector('.result-card');
+
+    const zip = await page.locator('#zip-input').inputValue();
+    assert.notEqual(zip, '35967');
+    assert.equal(zip, '16693');
+
+    const status = await page.locator('#status-message').textContent();
+    assert.match(status, /closest area we currently cover/i);
+    assert.match(status, /Williamsburg/i);
+
+    const classLabels = await page.locator('.result-class-label').allTextContents();
+    assert.ok(classLabels.some((label) => /Relevant borrowing program/i.test(label)));
+    assert.ok(!classLabels.some((label) => /Nearby library to ask/i.test(label)));
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: '/workspace/evidence/pass006-mobile-geo-object-aware.png',
+      fullPage: true,
+    });
 
     await browser.close();
   });
