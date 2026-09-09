@@ -225,3 +225,42 @@ describe('P10-05 pass010 release identity and dependency state', () => {
     assert.equal(packageJson.devDependencies.playwright, '1.62.1');
   });
 });
+
+describe('P10-06 sitemap and robots for crawlers', () => {
+  const HOMEPAGE_URL = 'https://caniborrowthis.com/';
+  const SITEMAP_URL = 'https://caniborrowthis.com/sitemap.xml';
+
+  it('sitemap.xml is valid XML sitemap', async () => {
+    const xml = await readFile(join(root, 'sitemap.xml'), 'utf8');
+    assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
+    assert.match(xml, /<urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/);
+    assert.match(xml, /<url>\s*<loc>https:\/\/caniborrowthis\.com\/<\/loc>\s*<\/url>/);
+    assert.match(xml, /<\/urlset>\s*$/);
+  });
+
+  it('sitemap.xml includes homepage URL exactly once', async () => {
+    const xml = await readFile(join(root, 'sitemap.xml'), 'utf8');
+    const locMatches = xml.match(/<loc>[^<]+<\/loc>/g) ?? [];
+    assert.equal(locMatches.length, 1);
+    assert.equal(locMatches[0], `<loc>${HOMEPAGE_URL}</loc>`);
+    assert.equal(xml.split(HOMEPAGE_URL).length - 1, 1);
+  });
+
+  it('robots.txt includes sitemap directive exactly once', async () => {
+    const robots = await readFile(join(root, 'robots.txt'), 'utf8');
+    const sitemapLines = robots.split('\n').filter((line) => line.startsWith('Sitemap:'));
+    assert.equal(sitemapLines.length, 1);
+    assert.equal(sitemapLines[0], `Sitemap: ${SITEMAP_URL}`);
+  });
+
+  it('sitemap and robots do not invent pages or URLs', async () => {
+    const xml = await readFile(join(root, 'sitemap.xml'), 'utf8');
+    const robots = await readFile(join(root, 'robots.txt'), 'utf8');
+    const sitemapUrls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+    assert.deepEqual(sitemapUrls, [HOMEPAGE_URL]);
+    const robotsUrls = [...robots.matchAll(/^Sitemap:\s*(https?:\/\/[^\s]+)/gm)].map(
+      (match) => match[1],
+    );
+    assert.deepEqual(robotsUrls, [SITEMAP_URL]);
+  });
+});

@@ -9,6 +9,8 @@ const mime = {
   '.html': 'text/html',
   '.css': 'text/css',
   '.js': 'text/javascript',
+  '.xml': 'application/xml',
+  '.txt': 'text/plain',
 };
 
 export function startStaticServer() {
