@@ -5,7 +5,7 @@
 | Field | SHA |
 |---|---|
 | `SUBSTANTIVE_IMPLEMENTATION_HEAD` | `c6898b5` |
-| `PR_HEAD_AT_RETURN` | `e22d509` |
+| `PR_HEAD_AT_RETURN` | `c86882b` |
 
 `SUBSTANTIVE_IMPLEMENTATION_HEAD` = prototype UI, source data, and unit tests (unchanged product scope). Correction 1 adds browser tests, pinned Playwright, and reproducible evidence tooling on top.
 
