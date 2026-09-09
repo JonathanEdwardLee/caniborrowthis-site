@@ -97,6 +97,68 @@ describe('SC-08 browser geolocation denied', () => {
   });
 });
 
+describe('P5-04 browser release marker and distant geo verification', () => {
+  it('exposes pass005 marker and continues distant geo search without outside-limit dead end', async () => {
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    await page.addInitScript(() => {
+      navigator.geolocation.getCurrentPosition = (success) => {
+        success({ coords: { latitude: 40.7128, longitude: -74.006 } });
+      };
+    });
+
+    await page.goto(ctx.baseUrl);
+    const marker = await page.locator('#cibt-release-marker');
+    assert.equal(await marker.getAttribute('data-release'), 'pass005');
+    assert.match(await marker.getAttribute('data-commit'), /^[0-9a-f]+$/);
+
+    const metaRelease = await page.locator('meta[name="cibt-release"]').getAttribute('content');
+    assert.equal(metaRelease, 'pass005');
+
+    await page.fill('#object-input', 'OBD-II scanner');
+    await page.click('#locate-btn');
+    await page.waitForSelector('.result-card');
+
+    const status = await page.locator('#status-message').textContent();
+    assert.match(status, /closest area we currently cover/i);
+    assert.doesNotMatch(status, /outside/i);
+    assert.ok((await page.locator('.result-card').count()) >= 1);
+    assert.equal(await page.locator('.result-distance').count(), 0);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: '/workspace/evidence/pass005-mobile-geo-distant.png', fullPage: true });
+
+    await browser.close();
+  });
+});
+
+describe('P5-05 browser geo near 90210 skips no-source centroid', () => {
+  it('selects nearest eligible source-backed area, not 90210', async () => {
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    await page.addInitScript(() => {
+      navigator.geolocation.getCurrentPosition = (success) => {
+        success({ coords: { latitude: 34.1031, longitude: -118.4163 } });
+      };
+    });
+
+    await page.goto(ctx.baseUrl);
+    await page.fill('#object-input', 'telescope');
+    await page.click('#locate-btn');
+    await page.waitForSelector('.result-card');
+
+    const zip = await page.locator('#zip-input').inputValue();
+    assert.notEqual(zip, '90210');
+    assert.ok(['16693', '19601', '35967', '01103'].includes(zip));
+
+    await browser.close();
+  });
+});
+
 describe('SC-10 browser mobile keyboard accessibility', () => {
   it('has no horizontal overflow at mobile viewport', async () => {
     const browser = await chromium.launch();

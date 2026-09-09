@@ -1,4 +1,4 @@
-import { PILOT_ZIPS } from './data.js';
+import { PILOT_ZIPS } from './data.js?v=pass005';
 
 const MILES_PER_KM = 0.621371;
 /** Show geo coverage context when user is farther than this from the centroid (straight-line). */
