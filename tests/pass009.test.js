@@ -255,6 +255,22 @@ describe('P9-05 Pass-008 routing and GEO ZIP trust regressions', () => {
   });
 });
 
+describe('P9-07 founder-approved Analytics disclosure', () => {
+  const DISCLOSURE =
+    'This site uses Google Analytics to understand how visitors use the site and improve its usefulness. Google may collect information such as device, browser, page-view, and interaction data. Can I Borrow This does not intentionally send your search text, ZIP code, or precise location to Google Analytics.';
+
+  it('index.html contains exact disclosure text exactly once', async () => {
+    const html = await readFile(join(root, 'index.html'), 'utf8');
+    assert.equal(html.split(DISCLOSURE).length - 1, 1);
+    assert.match(html, /<p class="analytics-disclosure">/);
+  });
+
+  it('does not introduce broader privacy-policy claims', async () => {
+    const html = await readFile(join(root, 'index.html'), 'utf8');
+    assert.doesNotMatch(html, /privacy policy|terms of service|cookie policy|we sell your data/i);
+  });
+});
+
 describe('P9-06 pass009 release identity and dependency state', () => {
   it('index.html and runtime imports use pass009', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
