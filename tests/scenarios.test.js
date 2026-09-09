@@ -2,7 +2,7 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { search, MESSAGES } from '../js/search.js';
 import { normalizeObject } from '../js/normalize.js';
-import { validateZip, distanceMiles, formatApproxDistance, nearestPilotZip } from '../js/geo.js';
+import { validateZip, distanceMiles, formatApproxDistance, nearestEligibleCoverageZip, GEO_CONTEXT_THRESHOLD_MI } from '../js/geo.js';
 import { RESULT_CLASS } from '../js/data.js';
 
 const events = [];
@@ -81,7 +81,7 @@ describe('SC-03 pressure washer + 35967', () => {
 describe('SC-04 chainsaw + 16693', () => {
   it('shows unsupported-object message; S6 only after disclaimer', () => {
     const out = search({ objectText: 'chainsaw', zip: '16693' });
-    assert.ok(out.disclaimers[0].includes('not supported'));
+    assert.match(out.disclaimers[0], /won't guess/i);
     assert.ok(out.results.every((r) => r.class === RESULT_CLASS.FALLBACK));
     assert.ok(!out.results.some((r) => r.class === RESULT_CLASS.RELEVANT));
     assert.ok(!out.results.some((r) => r.class === RESULT_CLASS.RESOURCE));
@@ -145,15 +145,17 @@ describe('SC-12 OBD-II scanner + 19601', () => {
 });
 
 describe('geolocation helpers', () => {
-  it('SC-08 nearest centroid within pilot when coords near Williamsburg', () => {
-    const nearest = nearestPilotZip(40.4524, -78.2389);
-    assert.equal(nearest.status, 'IN_RANGE');
+  it('SC-08 nearest eligible centroid when coords near Williamsburg', () => {
+    const nearest = nearestEligibleCoverageZip(40.4524, -78.2389);
     assert.equal(nearest.zip, '16693');
+    assert.ok(nearest.distanceMi <= GEO_CONTEXT_THRESHOLD_MI);
   });
 
-  it('rejects coords far from all pilot centroids', () => {
-    const nearest = nearestPilotZip(40.7128, -74.006);
-    assert.equal(nearest.status, 'OUT_OF_RANGE');
+  it('selects nearest eligible centroid for distant coords', () => {
+    const nearest = nearestEligibleCoverageZip(40.7128, -74.006);
+    assert.ok(nearest.zip);
+    assert.notEqual(nearest.zip, '90210');
+    assert.ok(nearest.distanceMi > GEO_CONTEXT_THRESHOLD_MI);
   });
 });
 

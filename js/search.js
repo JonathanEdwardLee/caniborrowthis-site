@@ -14,16 +14,14 @@ const CLASS_RANK = {
 
 const MESSAGES = {
   invalidZip: 'Enter a valid 5-digit ZIP.',
-  unsupportedZip: "This pilot does not cover that ZIP yet.",
-  outsidePilot: "Location is outside this pilot's supported areas",
+  unsupportedZip:
+    "We don't cover that ZIP yet. Try Use my location to see the closest area we cover.",
   noRelevantSource:
-    "We don't have a relevant borrowing source for this object in this pilot area yet.",
-  noNearbyEvidence:
-    'No approved nearby borrowing source is known for this pilot area.',
+    "We don't have a relevant borrowing source for this object in this area yet.",
+  noNearbyEvidence: 'No approved borrowing source is known for this area yet.',
   unsupportedObject:
-    'This object is not supported in the pilot. We cannot suggest category matches or broaden to related items.',
-  unrecognizedObject:
-    'We do not have a reviewed match for this object in the pilot.',
+    "We don't have a reviewed match for this object yet. We won't guess or broaden it to a related category.",
+  unrecognizedObject: "We don't have a reviewed match for this object yet.",
   geolocationDenied:
     'Location access was denied. You can still search by entering a ZIP code.',
   geolocationUnavailable:

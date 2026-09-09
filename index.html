@@ -3,20 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Can I Borrow This — Pilot</title>
+  <title>Can I Borrow This</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <header class="site-header">
     <h1>Can I Borrow This</h1>
     <p class="tagline">Find places to check for borrowing.</p>
-    <p class="pilot-note">Pass 003 pilot — modest coverage only. We do not claim comprehensive listings, exact-item matches, current availability, or live inventory.</p>
+    <p class="trust-copy">We link you to libraries and borrowing resources. Check the source for current availability.</p>
   </header>
 
   <main class="site-main">
     <form id="search-form" class="search-form" novalidate>
       <div class="field">
         <label for="object-input">What do you want to borrow?</label>
+        <p class="search-ideas" id="search-ideas">Try: sewing machine, telescope, OBD-II scanner, binoculars, electricity usage meter, mobile hotspot, science kit, or guitar.</p>
         <input
           id="object-input"
           name="object"
@@ -54,7 +55,7 @@
   </main>
 
   <footer class="site-footer">
-    <p>Prototype only — not deployed. Sources linked are authoritative; verify availability directly.</p>
+    <p>Sources linked are authoritative; verify availability directly.</p>
   </footer>
 
   <script type="module" src="js/app.js"></script>
