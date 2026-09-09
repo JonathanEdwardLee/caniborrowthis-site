@@ -1,6 +1,6 @@
 import { SOURCES, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js';
 import { normalizeObject } from './normalize.js';
-import { validateZip, formatApproxDistance } from './geo.js';
+import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js';
 import {
   measureSearchSubmitted,
   measureResultsRendered,
@@ -43,6 +43,30 @@ function fallbackMatchesGeography(source, zip) {
   return source.class === RESULT_CLASS.FALLBACK && source.geographyZips?.includes(zip);
 }
 
+function isDistantGeo(locationMode, geoDistanceMi) {
+  return (
+    locationMode === 'GEO' &&
+    geoDistanceMi != null &&
+    geoDistanceMi > GEO_CONTEXT_THRESHOLD_MI
+  );
+}
+
+function applyDistantGeoTrustPolicy(results, disclaimers, locationMode, geoDistanceMi) {
+  if (!isDistantGeo(locationMode, geoDistanceMi)) {
+    return { results, disclaimers };
+  }
+
+  const filteredResults = results
+    .filter((r) => r.class !== RESULT_CLASS.FALLBACK)
+    .map(({ distanceLabel, ...rest }) => rest);
+
+  const filteredDisclaimers = disclaimers.filter(
+    (d) => !d.includes('nearby library below'),
+  );
+
+  return { results: filteredResults, disclaimers: filteredDisclaimers };
+}
+
 function buildResult(source, zip) {
   const result = {
     sourceId: source.id,
@@ -65,9 +89,9 @@ function buildResult(source, zip) {
 
 /**
  * Core search logic — pure function for testability.
- * @param {{ objectText: string, zip: string, locationMode?: 'ZIP' | 'GEO' }} input
+ * @param {{ objectText: string, zip: string, locationMode?: 'ZIP' | 'GEO', geoDistanceMi?: number }} input
  */
-export function search({ objectText, zip, locationMode = 'ZIP' }) {
+export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi }) {
   const zipResult = validateZip(zip);
 
   if (zipResult.status === 'INVALID') {
@@ -113,24 +137,35 @@ export function search({ objectText, zip, locationMode = 'ZIP' }) {
       .filter((s) => fallbackMatchesGeography(s, pilotZip))
       .map((s) => buildResult(s, pilotZip));
 
-    const disclaimers = [MESSAGES.unsupportedObject];
+    let disclaimers = [MESSAGES.unsupportedObject];
     if (fallbacks.length > 0) {
       disclaimers.push(
         'The nearby library below is a generic place to ask — not a match for this object.',
       );
     }
 
-    const results = fallbacks;
+    let results = fallbacks;
+    let message = null;
+    ({ results, disclaimers } = applyDistantGeoTrustPolicy(
+      results,
+      disclaimers,
+      locationMode,
+      geoDistanceMi,
+    ));
+    if (results.length === 0 && fallbacks.length > 0) {
+      message = MESSAGES.noNearbyEvidence;
+    }
+
     measureResultsRendered({
       relevant: 0,
       resource: 0,
-      fallback: results.length,
+      fallback: results.filter((r) => r.class === RESULT_CLASS.FALLBACK).length,
       none: results.length === 0 ? 1 : 0,
     });
 
     return {
       status: 'ok',
-      message: null,
+      message,
       results,
       disclaimers,
       objectClass: null,
@@ -176,18 +211,31 @@ export function search({ objectText, zip, locationMode = 'ZIP' }) {
       };
     }
 
+    let results = fallbacks;
+    let message = null;
+    let finalDisclaimers = [MESSAGES.unrecognizedObject, ...disclaimers];
+    ({ results, disclaimers: finalDisclaimers } = applyDistantGeoTrustPolicy(
+      results,
+      finalDisclaimers,
+      locationMode,
+      geoDistanceMi,
+    ));
+    if (results.length === 0 && fallbacks.length > 0) {
+      message = MESSAGES.noNearbyEvidence;
+    }
+
     measureResultsRendered({
       relevant: 0,
       resource: 0,
-      fallback: fallbacks.length,
-      none: 0,
+      fallback: results.filter((r) => r.class === RESULT_CLASS.FALLBACK).length,
+      none: results.length === 0 ? 1 : 0,
     });
 
     return {
       status: 'ok',
-      message: null,
-      results: fallbacks,
-      disclaimers: [MESSAGES.unrecognizedObject, ...disclaimers],
+      message,
+      results,
+      disclaimers: finalDisclaimers,
       objectClass: null,
     };
   }
@@ -233,7 +281,7 @@ export function search({ objectText, zip, locationMode = 'ZIP' }) {
     .map((s) => buildResult(s, pilotZip));
 
   const hasRelevantOrResource = relevant.length > 0 || resources.length > 0;
-  const disclaimers = [];
+  let disclaimers = [];
 
   if (!hasRelevantOrResource && fallbacks.length > 0) {
     disclaimers.push(MESSAGES.noRelevantSource);
@@ -267,16 +315,28 @@ export function search({ objectText, zip, locationMode = 'ZIP' }) {
     return aNational - bNational;
   });
 
+  let message = null;
+  const preFilterCount = results.length;
+  ({ results, disclaimers } = applyDistantGeoTrustPolicy(
+    results,
+    disclaimers,
+    locationMode,
+    geoDistanceMi,
+  ));
+  if (results.length === 0 && preFilterCount > 0 && !hasRelevantOrResource) {
+    message = MESSAGES.noNearbyEvidence;
+  }
+
   measureResultsRendered({
-    relevant: relevant.length,
-    resource: resources.length,
-    fallback: hasRelevantOrResource ? fallbacks.length : results.filter((r) => r.class === RESULT_CLASS.FALLBACK).length,
+    relevant: results.filter((r) => r.class === RESULT_CLASS.RELEVANT).length,
+    resource: results.filter((r) => r.class === RESULT_CLASS.RESOURCE).length,
+    fallback: results.filter((r) => r.class === RESULT_CLASS.FALLBACK).length,
     none: results.length === 0 ? 1 : 0,
   });
 
   return {
     status: 'ok',
-    message: null,
+    message,
     results,
     disclaimers,
     objectClass,

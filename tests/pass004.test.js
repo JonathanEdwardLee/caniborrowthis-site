@@ -143,3 +143,51 @@ describe('P4-10 public copy strings', () => {
     assert.match(MESSAGES.unrecognizedObject, /reviewed match/);
   });
 });
+
+describe('P4-11 distant GEO trust: no misleading nearby fallbacks or distances', () => {
+  const distantMi = GEO_CONTEXT_THRESHOLD_MI + 50;
+
+  it('far GEO + generic-only outcome does not render Nearby library to ask', () => {
+    const out = search({
+      objectText: 'pressure washer',
+      zip: '16693',
+      locationMode: 'GEO',
+      geoDistanceMi: distantMi,
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(!out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
+    assert.ok(!out.results.some((r) => r.classLabel === 'Nearby library to ask'));
+    assert.ok(out.disclaimers.some((d) => d === MESSAGES.noRelevantSource));
+  });
+
+  it('far GEO + relevant result suppresses ZIP-reference distance labels', () => {
+    const out = search({
+      objectText: 'OBD-II scanner',
+      zip: '19601',
+      locationMode: 'GEO',
+      geoDistanceMi: distantMi,
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.some((r) => r.class === RESULT_CLASS.RELEVANT));
+    assert.ok(out.results.every((r) => !r.distanceLabel));
+  });
+
+  it('near GEO retains fallback cards and distance labels', () => {
+    const out = search({
+      objectText: 'sewing machine',
+      zip: '16693',
+      locationMode: 'GEO',
+      geoDistanceMi: 5,
+    });
+    assert.equal(out.status, 'ok');
+    assert.equal(out.results[0].distanceLabel, 'Approx. 10.7 mi');
+    assert.ok(out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
+  });
+
+  it('manual ZIP retains fallback cards and distance labels', () => {
+    const out = search({ objectText: 'sewing machine', zip: '16693', locationMode: 'ZIP' });
+    assert.equal(out.status, 'ok');
+    assert.equal(out.results[0].distanceLabel, 'Approx. 10.7 mi');
+    assert.ok(out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
+  });
+});

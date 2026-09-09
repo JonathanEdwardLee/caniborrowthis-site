@@ -34,6 +34,9 @@ describe('P4-03 browser geo distant coverage', () => {
     assert.match(status, /closest area we currently cover/i);
     assert.match(status, /Approx\./);
     assert.ok((await page.locator('.result-card').count()) >= 1);
+    assert.equal(await page.locator('.result-distance').count(), 0);
+    const classLabels = await page.locator('.result-class-label').allTextContents();
+    assert.ok(!classLabels.some((label) => /Nearby library to ask/i.test(label)));
     const zip = await page.locator('#zip-input').inputValue();
     assert.notEqual(zip, '90210');
 

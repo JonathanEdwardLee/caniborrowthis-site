@@ -16,6 +16,7 @@ const resultsEl = document.getElementById('results');
 let activeZip = '';
 let locationMode = 'ZIP';
 let pendingGeoContext = null;
+let lastGeoDistanceMi = null;
 
 function clearUI() {
   statusEl.textContent = '';
@@ -92,6 +93,7 @@ function runSearch() {
     objectText: objectInput.value,
     zip,
     locationMode,
+    geoDistanceMi: locationMode === 'GEO' ? lastGeoDistanceMi : undefined,
   });
 
   if (pendingGeoContext) {
@@ -119,6 +121,7 @@ form.addEventListener('submit', (e) => {
   locationMode = 'ZIP';
   activeZip = zipInput.value.trim();
   pendingGeoContext = null;
+  lastGeoDistanceMi = null;
   runSearch();
 });
 
@@ -142,6 +145,7 @@ locateBtn.addEventListener('click', () => {
 
       locationMode = 'GEO';
       activeZip = nearest.zip;
+      lastGeoDistanceMi = nearest.distanceMi;
       zipInput.value = nearest.zip;
       pendingGeoContext = formatGeoCoverageContext(nearest.label, nearest.distanceMi);
       runSearch();
