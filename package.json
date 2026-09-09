@@ -4,8 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/**/*.test.js",
+    "test": "npm run test:unit && npm run test:browser",
+    "test:unit": "node --test tests/**/*.test.js",
+    "test:browser": "node --test tests/browser.test.mjs",
+    "capture-evidence": "node tests/capture-evidence.mjs",
+    "postinstall": "playwright install chromium",
     "serve": "python3 -m http.server 8080"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "playwright": "1.49.0"
+  }
 }

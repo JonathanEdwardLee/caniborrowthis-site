@@ -1,71 +1,61 @@
-# CloudDev Quality Return — Pass 003
+# CloudDev Quality Return — Pass 003 (Correction 1)
 
-## 1. HEAD SHA
-`c6898b5`
+## 1. HEAD identity
 
-## 2. Changed files
-- `index.html` — one-page prototype shell
-- `css/styles.css` — responsive layout, focus styles, result card classes
-- `js/data.js` — frozen sources S1–S6 and pilot ZIP centroids
-- `js/normalize.js` — object allowlist normalization
-- `js/geo.js` — ZIP validation, haversine distance, geolocation centroid matching
-- `js/search.js` — ranking, failure states, disclaimers
-- `js/measure.js` — privacy-safe local measurement hooks
-- `js/app.js` — UI wiring and geolocation handler
-- `tests/scenarios.test.js` — SC-01 through SC-12 automated coverage
-- `tests/fixtures/broken-destination.js` — test-only broken URL fixture (excluded from production)
-- `package.json` — test runner script
+| Field | SHA |
+|---|---|
+| `SUBSTANTIVE_IMPLEMENTATION_HEAD` | `c6898b5` |
+| `PR_HEAD_AT_RETURN` | `e22d509` |
+
+`SUBSTANTIVE_IMPLEMENTATION_HEAD` = prototype UI, source data, and unit tests (unchanged product scope). Correction 1 adds browser tests, pinned Playwright, and reproducible evidence tooling on top.
+
+## 2. Changed files (correction 1)
+- `.cibt/RETURN.md` — corrected head identity and test counts
+- `package.json` — pinned Playwright `1.49.0`, test/capture scripts, postinstall
+- `package-lock.json` — reproducible dev dependency lock
+- `tests/helpers/server.mjs` — shared static server for browser tests/capture
+- `tests/browser.test.mjs` — SC-08 denied + SC-10 mobile/keyboard browser evidence
+- `tests/capture-evidence.mjs` — uses shared server helper
 
 ## 3. Test commands + results
 ```bash
+npm install
 npm test
-# node --test tests/**/*.test.js
-# 21 tests, 0 failures
+# test:unit — 22 tests, 0 failures
+# test:browser — 3 tests, 0 failures
+# total — 25 tests, 0 failures
+
+npm run capture-evidence
+# regenerates evidence/*.png
 ```
 
-## 4. Scenario coverage
+## 4. Scenario coverage (updated)
 | Scenario | Coverage |
 |---|---|
-| SC-01 sewing machine + 16693 | Automated |
-| SC-02 telescope + 01103 | Automated |
-| SC-03 pressure washer + 35967 | Automated |
-| SC-04 chainsaw + 16693 | Automated |
-| SC-05 pressure washer + 90210 | Automated |
-| SC-06 pressure washer + 12A45 | Automated |
-| SC-07 any + 10001 | Automated |
-| SC-08 geolocation denied | Message constants + permission handler in `app.js`; geo centroid logic automated |
-| SC-09 approx distance | Automated |
-| SC-10 mobile/keyboard | HTML structure + CSS focus/one-column layout; screenshots |
-| SC-11 result integrity | Automated |
-| SC-12 OBD-II + 19601 | Automated |
+| SC-01–SC-07, SC-09, SC-11, SC-12 | Unit automated |
+| SC-08 geolocation denied | Unit constants + **browser test** (denied message, ZIP still works) |
+| SC-10 mobile/keyboard | Unit HTML structure + **browser tests** (no overflow, focus/Enter/CTA) |
 
 ## 5. Rendered evidence
-See `evidence/` screenshots (desktop + mobile).
+- Repo: `evidence/*.png`
+- PR conversation: screenshots attached as images for Primary visual inspection
+- Reproduce: `npm install && npm run capture-evidence`
 
 ## 6. Keyboard/focus check
-- All inputs have `<label for=...>` associations
-- Visible `:focus` ring on inputs, buttons, and result CTAs
-- Enter submits the search form
-- Tab order: object → ZIP → Search → Use my location → result CTAs
+Browser test verifies Tab focus chain, Enter submit, and result CTA keyboard reachability at 390px viewport.
 
 ## 7. Privacy/measurement payload check
-Measurement hooks emit only:
-- `search_submitted`: canonical object class, location mode, coverage state
-- `results_rendered`: counts by class
-- `outbound_clicked`: source id + result class
-- `location_permission_result`: GRANTED/DENIED/ERROR
-
-No raw object text, ZIP, or coordinates in payloads. Geolocation coordinates are processed client-side only and not persisted.
+Unchanged — no raw object text, ZIP, or coordinates in measurement payloads. Geolocation denial test mocks permission denied without storing coordinates.
 
 ## 8. Dependencies
-- **Runtime:** none (plain HTML/CSS/JS, ES modules)
-- **Dev/test:** Node.js built-in test runner only
-- **Recurring cost impact:** none
+- **Runtime:** none (plain HTML/CSS/JS ES modules)
+- **Dev/test:** Node.js built-in test runner + Playwright `1.49.0` (pinned, lockfile, `postinstall` installs Chromium)
+- **Recurring cost impact:** none (local dev tooling only)
 
 ## 9. Known limitations
-- SC-08 browser permission denial requires manual/browser verification; automated test covers message constants and handler wiring
 - Geolocation maps to nearest frozen centroid within 15 mi; no reverse geocoding
 - Distance for relevant programs uses frozen accepted display anchors where specified
+- SC-08 browser test uses deterministic geolocation API mock (permission denied); does not exercise OS permission dialog
 
 ## 10. Deployment
 **NO deployment or publication performed.**
