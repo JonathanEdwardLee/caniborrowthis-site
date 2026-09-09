@@ -56,7 +56,8 @@ describe('P4-03 geo beyond old 15-mile radius', () => {
     assert.equal(out.status, 'ok');
     assert.ok(out.results.length > 0);
     const context = formatGeoCoverageContext(nearest.label, nearest.distanceMi);
-    assert.match(context, /closest area we currently cover/);
+    assert.match(context, /closest reviewed source area for this search/);
+    assert.doesNotMatch(context, /closest area we currently cover/i);
     assert.match(context, /Approx\./);
   });
 });
