@@ -1,5 +1,5 @@
 import { search, MESSAGES } from './search.js';
-import { nearestPilotZip } from './geo.js';
+import { nearestEligibleCoverageZip, formatGeoCoverageContext } from './geo.js';
 import {
   measureOutboundClicked,
   measureLocationPermissionResult,
@@ -15,6 +15,8 @@ const resultsEl = document.getElementById('results');
 
 let activeZip = '';
 let locationMode = 'ZIP';
+let pendingGeoContext = null;
+let lastGeoDistanceMi = null;
 
 function clearUI() {
   statusEl.textContent = '';
@@ -91,15 +93,23 @@ function runSearch() {
     objectText: objectInput.value,
     zip,
     locationMode,
+    geoDistanceMi: locationMode === 'GEO' ? lastGeoDistanceMi : undefined,
   });
+
+  if (pendingGeoContext) {
+    showStatus(pendingGeoContext, 'info');
+    pendingGeoContext = null;
+  }
 
   if (outcome.status === 'error') {
     showStatus(outcome.message, 'error');
     return;
   }
 
-  if (outcome.message) {
+  if (outcome.message && statusEl.hidden) {
     showStatus(outcome.message, 'info');
+  } else if (outcome.message) {
+    showStatus(`${statusEl.textContent} ${outcome.message}`, 'info');
   }
 
   renderDisclaimers(outcome.disclaimers);
@@ -110,6 +120,8 @@ form.addEventListener('submit', (e) => {
   e.preventDefault();
   locationMode = 'ZIP';
   activeZip = zipInput.value.trim();
+  pendingGeoContext = null;
+  lastGeoDistanceMi = null;
   runSearch();
 });
 
@@ -127,21 +139,15 @@ locateBtn.addEventListener('click', () => {
     (pos) => {
       measureLocationPermissionResult({ result: 'GRANTED' });
       const { latitude, longitude } = pos.coords;
-      const nearest = nearestPilotZip(latitude, longitude);
+      const nearest = nearestEligibleCoverageZip(latitude, longitude);
       locateBtn.disabled = false;
       locateBtn.removeAttribute('aria-busy');
 
-      if (nearest.status === 'OUT_OF_RANGE') {
-        locationMode = 'GEO';
-        activeZip = '';
-        clearUI();
-        showStatus(MESSAGES.outsidePilot, 'error');
-        return;
-      }
-
       locationMode = 'GEO';
       activeZip = nearest.zip;
+      lastGeoDistanceMi = nearest.distanceMi;
       zipInput.value = nearest.zip;
+      pendingGeoContext = formatGeoCoverageContext(nearest.label, nearest.distanceMi);
       runSearch();
     },
     (err) => {

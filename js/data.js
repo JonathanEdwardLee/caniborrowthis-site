@@ -82,7 +82,7 @@ export const SOURCES = [
     geographyZips: ['35967'],
     objectClasses: null,
     objectRelevance: 'NONE_ASSERTED',
-    note: 'No relevant borrowing source is known in the frozen pilot set; nearby official library route to ask/check.',
+    note: 'No relevant borrowing source is known in our current coverage; nearby official library route to ask/check.',
     reviewDate: '2026-09-08',
   },
   {

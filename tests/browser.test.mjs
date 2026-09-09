@@ -13,6 +13,56 @@ after(async () => {
   await ctx.close();
 });
 
+describe('P4-03 browser geo distant coverage', () => {
+  it('searches nearest eligible area with coverage context, no dead end', async () => {
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    await page.addInitScript(() => {
+      navigator.geolocation.getCurrentPosition = (success) => {
+        success({ coords: { latitude: 40.7128, longitude: -74.006 } });
+      };
+    });
+
+    await page.goto(ctx.baseUrl);
+    await page.fill('#object-input', 'OBD-II scanner');
+    await page.click('#locate-btn');
+    await page.waitForSelector('.result-card');
+
+    const status = await page.locator('#status-message').textContent();
+    assert.match(status, /closest area we currently cover/i);
+    assert.match(status, /Approx\./);
+    assert.ok((await page.locator('.result-card').count()) >= 1);
+    assert.equal(await page.locator('.result-distance').count(), 0);
+    const classLabels = await page.locator('.result-class-label').allTextContents();
+    assert.ok(!classLabels.some((label) => /Nearby library to ask/i.test(label)));
+    const zip = await page.locator('#zip-input').inputValue();
+    assert.notEqual(zip, '90210');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: '/workspace/evidence/pass004-mobile-geo-distant.png', fullPage: true });
+
+    await browser.close();
+  });
+});
+
+describe('P4-01 browser intro copy', () => {
+  it('shows trust copy and search ideas without forbidden terms', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+
+    const body = await page.locator('body').innerText();
+    assert.doesNotMatch(body, /\bpilot\b|prototype|pass 003|not deployed/i);
+    assert.match(body, /Try: sewing machine, telescope/);
+    assert.match(body, /We link you to libraries and borrowing resources/);
+
+    await page.screenshot({ path: '/workspace/evidence/pass004-desktop-intro.png', fullPage: true });
+    await browser.close();
+  });
+});
+
 describe('SC-08 browser geolocation denied', () => {
   it('shows denied message and ZIP search still works afterward', async () => {
     const browser = await chromium.launch();

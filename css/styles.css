@@ -68,8 +68,14 @@ body {
   font-weight: 500;
 }
 
-.pilot-note {
-  margin: 0;
+.trust-copy {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--color-muted);
+}
+
+.search-ideas {
+  margin: 0 0 0.5rem;
   font-size: 0.875rem;
   color: var(--color-muted);
 }
