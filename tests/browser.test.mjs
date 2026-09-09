@@ -26,7 +26,7 @@ describe('P4-03 browser geo distant coverage', () => {
     });
 
     await page.goto(ctx.baseUrl);
-    await page.fill('#object-input', 'OBD-II scanner');
+    await page.selectOption('#object-input', 'OBD-II scanner');
     await page.click('#locate-btn');
     await page.waitForSelector('.result-card');
 
@@ -46,17 +46,19 @@ describe('P4-03 browser geo distant coverage', () => {
 });
 
 describe('P4-01 browser intro copy', () => {
-  it('shows trust copy and search ideas without forbidden terms', async () => {
+  it('shows trust copy, guided selector, and explainer without forbidden terms', async () => {
     const browser = await chromium.launch();
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     await page.goto(ctx.baseUrl);
 
     const body = await page.locator('body').innerText();
     assert.doesNotMatch(body, /\bpilot\b|prototype|pass 003|not deployed/i);
-    assert.match(body, /Try: sewing machine, telescope/);
     assert.match(body, /We link you to libraries and borrowing resources/);
+    assert.match(body, /How Can I Borrow This works/);
+    assert.match(body, /Library of Things/i);
+    assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
 
-    await page.screenshot({ path: '/workspace/evidence/pass004-desktop-intro.png', fullPage: true });
+    await page.screenshot({ path: '/workspace/evidence/pass010-desktop-intro.png', fullPage: true });
     await browser.close();
   });
 });
@@ -81,7 +83,7 @@ describe('SC-08 browser geolocation denied', () => {
     assert.match(deniedText, /denied/i);
     assert.match(deniedText, /ZIP/i);
 
-    await page.fill('#object-input', 'sewing machine');
+    await page.selectOption('#object-input', 'sewing machine');
     await page.fill('#zip-input', '16693');
     await page.click('button[type="submit"]');
     await page.waitForSelector('.result-card');
@@ -96,7 +98,7 @@ describe('SC-08 browser geolocation denied', () => {
 });
 
 describe('P5-04 browser release marker and distant geo verification', () => {
-  it('exposes pass009 marker and continues distant geo search without outside-limit dead end', async () => {
+  it('exposes pass010 marker and continues distant geo search without outside-limit dead end', async () => {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -109,13 +111,13 @@ describe('P5-04 browser release marker and distant geo verification', () => {
 
     await page.goto(ctx.baseUrl);
     const marker = await page.locator('#cibt-release-marker');
-    assert.equal(await marker.getAttribute('data-release'), 'pass009');
+    assert.equal(await marker.getAttribute('data-release'), 'pass010');
     assert.equal(await marker.getAttribute('data-commit'), null);
 
     const metaRelease = await page.locator('meta[name="cibt-release"]').getAttribute('content');
-    assert.equal(metaRelease, 'pass009');
+    assert.equal(metaRelease, 'pass010');
 
-    await page.fill('#object-input', 'OBD-II scanner');
+    await page.selectOption('#object-input', 'OBD-II scanner');
     await page.click('#locate-btn');
     await page.waitForSelector('.result-card');
 
@@ -143,12 +145,12 @@ describe('P5-05 browser geo near 90210 skips no-source centroid', () => {
     });
 
     await page.goto(ctx.baseUrl);
-    await page.fill('#object-input', 'telescope');
     await page.click('#locate-btn');
     await page.waitForSelector('.result-card');
 
     const zip = await page.locator('#zip-input').inputValue();
     assert.equal(zip, '');
+    assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
     assert.match(await page.locator('.result-card').first().innerText(), /Library Telescope Program|Baxter County Library/i);
 
     await browser.close();
@@ -168,7 +170,7 @@ describe('P6-02 browser object-aware GEO avoids Fort Payne fallback', () => {
     });
 
     await page.goto(ctx.baseUrl);
-    await page.fill('#object-input', 'sewing machine');
+    await page.selectOption('#object-input', 'sewing machine');
     await page.click('#locate-btn');
     await page.waitForSelector('.result-card');
 
@@ -201,14 +203,14 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     });
 
     await page.goto(ctx.baseUrl);
-    await page.fill('#object-input', 'pressure washer');
+    await page.selectOption('#object-input', 'pressure washer');
     await page.click('#locate-btn');
     await page.waitForSelector('.result-card');
 
     assert.match(await page.locator('.result-card').first().innerText(), /Laverne Schell Tool Library/i);
     assert.equal(await page.locator('#zip-input').inputValue(), '');
     await page.screenshot({
-      path: '/workspace/evidence/pass009-mobile-springfield-pressure-washer-geo.png',
+      path: '/workspace/evidence/pass010-mobile-springfield-pressure-washer-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -226,7 +228,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     });
 
     await page.goto(ctx.baseUrl);
-    await page.fill('#object-input', '3D printer');
+    await page.selectOption('#object-input', '3D printer');
     await page.click('#locate-btn');
     await page.waitForSelector('.result-card');
 
@@ -234,7 +236,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(cardText, /Maker Space/i);
     assert.match(cardText, /On-site equipment resource — not a take-home loan/i);
     await page.screenshot({
-      path: '/workspace/evidence/pass009-mobile-springfield-3d-printer-geo.png',
+      path: '/workspace/evidence/pass010-mobile-springfield-3d-printer-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -252,14 +254,14 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     });
 
     await page.goto(ctx.baseUrl);
-    await page.fill('#object-input', 'telescope');
     await page.click('#locate-btn');
     await page.waitForSelector('.result-card');
 
     assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
     assert.equal(await page.locator('#zip-input').inputValue(), '');
+    assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
     await page.screenshot({
-      path: '/workspace/evidence/pass009-mobile-mountain-home-telescope-geo.png',
+      path: '/workspace/evidence/pass010-mobile-mountain-home-telescope-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -269,7 +271,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     const browser = await chromium.launch();
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await page.goto(ctx.baseUrl);
-    await page.fill('#object-input', 'fishing pole');
+    await page.selectOption('#object-input', 'fishing pole');
     await page.fill('#zip-input', '72653');
     await page.click('button[type="submit"]');
     await page.waitForSelector('.result-card');
@@ -277,9 +279,75 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
     assert.equal(await page.locator('#zip-input').inputValue(), '72653');
     await page.screenshot({
-      path: '/workspace/evidence/pass009-mobile-72653-fishing-pole-zip.png',
+      path: '/workspace/evidence/pass010-mobile-72653-fishing-pole-zip.png',
       fullPage: true,
     });
+    await browser.close();
+  });
+});
+
+describe('P10 browser guided discovery and explainer', () => {
+  it('searches with default telescope without changing selector', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.goto(ctx.baseUrl);
+
+    assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
+    await page.fill('#zip-input', '01103');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    assert.ok((await page.locator('.result-card').count()) >= 1);
+
+    await browser.close();
+  });
+
+  it('keeps explainer below results before and after search', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.goto(ctx.baseUrl);
+
+    const orderBefore = await page.evaluate(() => {
+      const results = document.getElementById('results');
+      const explainer = document.getElementById('cibt-explainer');
+      const footer = document.querySelector('.site-footer');
+      return (
+        results.compareDocumentPosition(explainer) & Node.DOCUMENT_POSITION_FOLLOWING &&
+        explainer.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING
+      );
+    });
+    assert.ok(orderBefore);
+
+    await page.fill('#zip-input', '01103');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+
+    const orderAfter = await page.evaluate(() => {
+      const results = document.getElementById('results');
+      const explainer = document.getElementById('cibt-explainer');
+      const footer = document.querySelector('.site-footer');
+      return (
+        results.compareDocumentPosition(explainer) & Node.DOCUMENT_POSITION_FOLLOWING &&
+        explainer.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING &&
+        !explainer.hidden
+      );
+    });
+    assert.ok(orderAfter);
+    assert.match(await page.locator('#cibt-explainer').innerText(), /Borrow before you buy/i);
+
+    await page.screenshot({
+      path: '/workspace/evidence/pass010-mobile-default-telescope-search.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+
+  it('preserves Analytics disclosure in footer', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage();
+    await page.goto(ctx.baseUrl);
+    const disclosure = await page.locator('.analytics-disclosure').textContent();
+    assert.match(disclosure, /Google Analytics/);
+    assert.match(disclosure, /does not intentionally send your search text, ZIP code, or precise location/);
     await browser.close();
   });
 });
@@ -290,7 +358,6 @@ describe('SC-10 browser mobile keyboard accessibility', () => {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await page.goto(ctx.baseUrl);
 
-    await page.fill('#object-input', 'telescope');
     await page.fill('#zip-input', '01103');
     await page.click('button[type="submit"]');
     await page.waitForSelector('.result-card');
@@ -315,7 +382,7 @@ describe('SC-10 browser mobile keyboard accessibility', () => {
     await page.focus('#object-input');
     assert.equal(await page.evaluate(() => document.activeElement?.id), 'object-input');
 
-    await page.keyboard.type('sewing machine');
+    await page.selectOption('#object-input', 'sewing machine');
     await page.keyboard.press('Tab');
     assert.equal(await page.evaluate(() => document.activeElement?.id), 'zip-input');
 

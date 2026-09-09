@@ -1,11 +1,12 @@
-import { search, MESSAGES } from './search.js?v=pass009';
-import { resolveGeoSearchTarget, formatGeoCoverageContext } from './geo.js?v=pass009';
-import { normalizeObject } from './normalize.js?v=pass009';
+import { search, MESSAGES } from './search.js?v=pass010';
+import { resolveGeoSearchTarget, formatGeoCoverageContext } from './geo.js?v=pass010';
+import { normalizeObject } from './normalize.js?v=pass010';
 import {
   measureOutboundClicked,
   measureLocationPermissionResult,
-} from './measure.js?v=pass009';
-import { CIBT_RELEASE } from './release.js?v=pass009';
+} from './measure.js?v=pass010';
+import { CIBT_RELEASE } from './release.js?v=pass010';
+import { OBJECT_OPTIONS, DEFAULT_OBJECT_VALUE } from './object-options.js?v=pass010';
 
 const releaseMarker = document.getElementById('cibt-release-marker');
 if (releaseMarker) {
@@ -25,6 +26,20 @@ let locationMode = 'ZIP';
 let pendingGeoContext = null;
 let lastGeoDistanceMi = null;
 let geoTargetKind = undefined;
+
+function populateObjectSelect() {
+  for (const opt of OBJECT_OPTIONS) {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.label;
+    if (opt.value === DEFAULT_OBJECT_VALUE) {
+      option.selected = true;
+    }
+    objectInput.appendChild(option);
+  }
+}
+
+populateObjectSelect();
 
 function clearUI() {
   statusEl.textContent = '';

@@ -106,7 +106,8 @@ body {
   font-size: 0.9375rem;
 }
 
-.field input {
+.field input,
+.field select {
   font: inherit;
   padding: 0.625rem 0.75rem;
   border: 1px solid var(--color-border);
@@ -116,7 +117,8 @@ body {
   min-height: 2.75rem;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
@@ -269,6 +271,30 @@ body {
   outline: none;
   box-shadow: var(--focus-ring);
   border-radius: 2px;
+}
+
+.cibt-explainer {
+  margin-top: calc(var(--space) * 2);
+  padding: calc(var(--space) * 1.25);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.cibt-explainer h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+}
+
+.cibt-explainer h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+.cibt-explainer p {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--color-muted);
 }
 
 .site-footer {

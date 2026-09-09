@@ -206,6 +206,7 @@ describe('SC-10 accessibility structure', () => {
     const { readFile } = await import('node:fs/promises');
     const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
     assert.match(html, /for="object-input"/);
+    assert.match(html, /<select id="object-input"/);
     assert.match(html, /for="zip-input"/);
     assert.match(html, /<form[^>]+id="search-form"/);
     assert.match(html, /type="submit"/);
