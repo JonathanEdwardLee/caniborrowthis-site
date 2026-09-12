@@ -6,6 +6,7 @@ Owner: CIBT Primary
 Worker role: CloudDev  
 Product repository only: `JonathanEdwardLee/caniborrowthis-site`  
 Prepared branch: `primary/cibt-pass011-ozarks-coverage-20260912`  
+Controlling product PR: `#10`  
 Base production commit: `15772544ed03d0ec4252725250e5bd0263bb4982`
 
 This branch contains the minimum immutable/public-safe transfer from accepted CIBT Research head:
@@ -73,12 +74,18 @@ Under `.cibt/pass-011/`:
 - `ozarks_city_filters.csv`
 - `ozarks_key_city_category_probes_85.csv`
 
-At startup, verify SHA-256 exactly:
+The accepted Research artifact hashes remain provenance in `TRANSFER-MANIFEST.json`, but GitHub text packaging changed raw byte identity when the Primary copied the accepted CSV text into this product repository. Primary independently re-compared source and packaged text content and verified expected row counts before authorizing continuation.
 
-- `ozarks_city_filters.csv` = `0939f690565efcb09837738159d5864e6ed6918465a4f2eb5962f4e463f6d2c0`
-- `ozarks_key_city_category_probes_85.csv` = `615189bf001b8b3a97a7f4451a52aa3343bfb2123845d047b5a312be971c4493`
+For **local product-transfer integrity**, verify these exact packaged-file SHA-256 values:
 
-If either hash differs, STOP and report transfer corruption. Do not regenerate research data.
+- `ozarks_city_filters.csv` = `38917bb9fd9f14a9b4cf0feb0e69971949ad5d9b89bb3bf2cd2af21ec5eb206e`
+- `ozarks_key_city_category_probes_85.csv` = `8934f116c49ff733d44d92a2259fc44a3f3709bf8df4b84fe617ba02c4213ebd`
+
+These are the hashes CloudDev observed in startup receipt comment `5649121703`; they are now the controlling product-transfer hashes.
+
+The accepted Research artifact SHA-256 values remain recorded separately as provenance and MUST NOT be used as the expected local product-file hashes.
+
+If either **product_transfer_sha256** differs, STOP and report transfer corruption. Do not regenerate research data.
 
 ## Baseline to preserve
 
