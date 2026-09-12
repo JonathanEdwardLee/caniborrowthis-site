@@ -1598,7 +1598,7 @@ export const OZARKS_SOURCES = [
     "objectClasses": [
       "TELESCOPE"
     ],
-    "note": "Official Library of Things listing names telescope as a checkout category. Check the source for current inventory and eligibility — do not treat this as proof a telescope is available now.",
+    "note": "Official Library of Things listing names telescope as a checkout category. Check the source for inventory and eligibility. This is not a current-inventory claim.",
     "reviewDate": "2026-09-12",
     "probeStatus": "ACCEPTED_CANDIDATE",
     "categoryFamily": "telescope_science"
