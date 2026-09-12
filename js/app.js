@@ -1,12 +1,12 @@
-import { search, MESSAGES } from './search.js?v=pass010';
-import { resolveGeoSearchTarget, formatGeoCoverageContext } from './geo.js?v=pass010';
-import { normalizeObject } from './normalize.js?v=pass010';
+import { search, MESSAGES } from './search.js?v=pass011';
+import { resolveGeoSearchTarget, formatGeoCoverageContext } from './geo.js?v=pass011';
+import { normalizeObject } from './normalize.js?v=pass011';
 import {
   measureOutboundClicked,
   measureLocationPermissionResult,
-} from './measure.js?v=pass010';
-import { CIBT_RELEASE } from './release.js?v=pass010';
-import { OBJECT_OPTIONS, DEFAULT_OBJECT_VALUE } from './object-options.js?v=pass010';
+} from './measure.js?v=pass011';
+import { CIBT_RELEASE } from './release.js?v=pass011';
+import { OBJECT_OPTIONS, DEFAULT_OBJECT_VALUE } from './object-options.js?v=pass011';
 
 const releaseMarker = document.getElementById('cibt-release-marker');
 if (releaseMarker) {

@@ -1,5 +1,6 @@
-import { SOURCES, RESULT_CLASS, PILOT_ZIPS } from './data.js?v=pass010';
-import { normalizeObject } from './normalize.js?v=pass010';
+import { getAllSources, RESULT_CLASS, PILOT_ZIPS } from './data.js?v=pass011';
+import { normalizeObject } from './normalize.js?v=pass011';
+import { OZARKS_CITIES } from './ozarks-generated.js?v=pass011';
 
 const MILES_PER_KM = 0.621371;
 /** Show geo coverage context when user is farther than this from the centroid (straight-line). */
@@ -58,11 +59,11 @@ function isGeographyBoundObjectRelevantSource(source, objectClass) {
 function findNearestObjectRelevantZip(lat, lon, objectClass) {
   const candidates = [];
 
-  for (const source of SOURCES) {
+  for (const source of getAllSources()) {
     if (!isGeographyBoundObjectRelevantSource(source, objectClass)) continue;
     for (const zip of source.geographyZips) {
       const info = PILOT_ZIPS[zip];
-      if (!info || info.noApprovedSource) continue;
+      if (!info || info.noApprovedSource || info.lat == null || info.lon == null) continue;
       const distanceMi = distanceMiles(lat, lon, info.lat, info.lon);
       candidates.push({ zip, distanceMi, label: info.label, sourceId: source.id });
     }
@@ -73,26 +74,51 @@ function findNearestObjectRelevantZip(lat, lon, objectClass) {
   return candidates[0];
 }
 
+function considerFallbackCandidate(nearest, lat, lon, zip, pointLat, pointLon, label) {
+  if (pointLat == null || pointLon == null || !zip) return nearest;
+  const info = PILOT_ZIPS[zip];
+  if (!info || info.noApprovedSource) return nearest;
+  const distanceMi = distanceMiles(lat, lon, pointLat, pointLon);
+  if (distanceMi <= GEO_CONTEXT_THRESHOLD_MI && (!nearest || distanceMi < nearest.distanceMi)) {
+    return { zip, distanceMi, label };
+  }
+  return nearest;
+}
+
 function findNearestFallbackWithinThreshold(lat, lon) {
   let nearest = null;
 
-  for (const source of SOURCES) {
+  for (const source of getAllSources()) {
     if (source.class !== RESULT_CLASS.FALLBACK) continue;
     for (const zip of source.geographyZips || []) {
       const info = PILOT_ZIPS[zip];
-      if (!info || info.noApprovedSource) continue;
-      const distanceMi = distanceMiles(lat, lon, info.lat, info.lon);
-      if (distanceMi <= GEO_CONTEXT_THRESHOLD_MI && (!nearest || distanceMi < nearest.distanceMi)) {
-        nearest = { zip, distanceMi, label: info.label };
-      }
+      if (!info || info.lat == null || info.lon == null) continue;
+      nearest = considerFallbackCandidate(nearest, lat, lon, zip, info.lat, info.lon, info.label);
     }
+  }
+
+  for (const city of OZARKS_CITIES) {
+    if (!city.productRouteEligible) continue;
+    nearest = considerFallbackCandidate(
+      nearest,
+      lat,
+      lon,
+      city.representativeZip,
+      city.lat,
+      city.lon,
+      `${city.city}, ${city.state}`,
+    );
   }
 
   return nearest;
 }
 
+export function getOzarksCity(city, state) {
+  return OZARKS_CITIES.find((row) => row.city === city && row.state === state) || null;
+}
+
 function hasNationalResourceForObject(objectClass) {
-  return SOURCES.some(
+  return getAllSources().some(
     (s) =>
       s.class === RESULT_CLASS.RESOURCE &&
       s.national &&
@@ -111,6 +137,7 @@ export function nearestEligibleCoverageZip(lat, lon) {
 
   for (const [zip, info] of Object.entries(PILOT_ZIPS)) {
     if (info.noApprovedSource) continue;
+    if (info.lat == null || info.lon == null) continue;
     const d = distanceMiles(lat, lon, info.lat, info.lon);
     if (d < nearestDist) {
       nearestDist = d;
