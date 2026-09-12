@@ -197,28 +197,28 @@ describe('P10-04 Pass-009 analytics and disclosure preservation', () => {
   });
 });
 
-describe('P10-05 pass010 release identity and dependency state', () => {
-  it('index.html and runtime imports use pass010', async () => {
+describe('P10-05 pass011 release identity and dependency state', () => {
+  it('index.html and runtime imports use pass011', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /cibt-release" content="pass010"/);
-    assert.match(html, /styles\.css\?v=pass010/);
-    assert.match(html, /app\.js\?v=pass010/);
+    assert.match(html, /cibt-release" content="pass011"/);
+    assert.match(html, /styles\.css\?v=pass011/);
+    assert.match(html, /app\.js\?v=pass011/);
   });
 
-  it('every relative runtime .js import uses pass010 version query', async () => {
+  it('every relative runtime .js import uses pass011 version query', async () => {
     const importPattern = /from\s+['"](\.\/[^'"]+\.js(?:\?[^'"]*)?)['"]/g;
     for (const name of (await readdir(JS_DIR)).filter((entry) => entry.endsWith('.js'))) {
       const relPath = join('js', name);
       const content = await readFile(join(root, relPath), 'utf8');
       for (const [, specifier] of content.matchAll(importPattern)) {
-        assert.match(specifier, /\.js\?v=pass010$/, `${relPath} import "${specifier}"`);
+        assert.match(specifier, /\.js\?v=pass011$/, `${relPath} import "${specifier}"`);
       }
     }
   });
 
-  it('release.js exports pass010 identity', () => {
-    assert.equal(CIBT_RELEASE.pass, 'pass010');
-    assert.equal(CIBT_RELEASE.version, 'pass010');
+  it('release.js exports pass011 identity', () => {
+    assert.equal(CIBT_RELEASE.pass, 'pass011');
+    assert.equal(CIBT_RELEASE.version, 'pass011');
   });
 
   it('Playwright remains exact 1.62.1', () => {

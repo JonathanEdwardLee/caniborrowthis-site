@@ -28,6 +28,14 @@ await page.click('button[type="submit"]');
 await page.waitForSelector('.result-card');
 await page.screenshot({ path: join(evidenceDir, 'mobile-sc02-results.png'), fullPage: true });
 
+await page.setViewportSize({ width: 1280, height: 900 });
+await page.goto(ctx.baseUrl);
+await page.selectOption('#object-input', 'garden tool');
+await page.fill('#zip-input', '65681');
+await page.click('button[type="submit"]');
+await page.waitForSelector('.result-card');
+await page.screenshot({ path: join(evidenceDir, 'pass011-capture-lampe-fallback.png'), fullPage: true });
+
 await browser.close();
 await ctx.close();
 console.log('Screenshots saved to evidence/');

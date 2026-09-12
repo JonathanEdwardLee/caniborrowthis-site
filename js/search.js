@@ -1,10 +1,10 @@
-import { SOURCES, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass010';
-import { normalizeObject } from './normalize.js?v=pass010';
-import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass010';
+import { getAllSources, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass011';
+import { normalizeObject } from './normalize.js?v=pass011';
+import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass011';
 import {
   measureSearchSubmitted,
   measureResultsRendered,
-} from './measure.js?v=pass010';
+} from './measure.js?v=pass011';
 
 const CLASS_RANK = {
   [RESULT_CLASS.RELEVANT]: 1,
@@ -35,14 +35,22 @@ function sourceMatchesObject(source, objectClass) {
   return source.objectClasses.includes(objectClass);
 }
 
-function sourceMatchesGeography(source, zip) {
+function sourceMatchesGeography(source, zip, cityKey) {
   if (source.national) return true;
+  if (cityKey && source.geographyCityKeys?.includes(cityKey)) return true;
+  if (source.geographyCityKeys?.length && !source.geographyZips?.length) {
+    return false;
+  }
   if (!source.geographyZips) return false;
   return source.geographyZips.includes(zip);
 }
 
-function fallbackMatchesGeography(source, zip) {
-  return source.class === RESULT_CLASS.FALLBACK && source.geographyZips?.includes(zip);
+function fallbackMatchesGeography(source, zip, cityKey) {
+  if (source.class !== RESULT_CLASS.FALLBACK) return false;
+  if (source.geographyCityKeys?.length) {
+    return Boolean(cityKey && source.geographyCityKeys.includes(cityKey));
+  }
+  return source.geographyZips?.includes(zip);
 }
 
 function isDistantGeo(locationMode, geoDistanceMi) {
@@ -97,7 +105,7 @@ function buildResult(source, zip) {
  * Core search logic — pure function for testability.
  * @param {{ objectText: string, zip: string, locationMode?: 'ZIP' | 'GEO', geoDistanceMi?: number, geoTargetKind?: 'national' | 'no_zip' }} input
  */
-export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, geoTargetKind }) {
+export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, geoTargetKind, cityKey }) {
   if (locationMode === 'GEO' && geoTargetKind === 'national') {
     const objectNorm = normalizeObject(objectText);
     if (objectNorm.status !== 'SUPPORTED') {
@@ -121,7 +129,7 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
       coverageState: 'SUPPORTED',
     });
 
-    const resources = SOURCES.filter(
+    const resources = getAllSources().filter(
       (s) =>
         s.class === RESULT_CLASS.RESOURCE &&
         s.national &&
@@ -226,8 +234,8 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
       coverageState: 'SUPPORTED',
     });
 
-    const fallbacks = SOURCES
-      .filter((s) => fallbackMatchesGeography(s, pilotZip))
+    const fallbacks = getAllSources()
+      .filter((s) => fallbackMatchesGeography(s, pilotZip, cityKey))
       .map((s) => buildResult(s, pilotZip));
 
     let disclaimers = [MESSAGES.unsupportedObject];
@@ -272,8 +280,8 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
       coverageState: 'SUPPORTED',
     });
 
-    const fallbacks = SOURCES
-      .filter((s) => fallbackMatchesGeography(s, pilotZip))
+    const fallbacks = getAllSources()
+      .filter((s) => fallbackMatchesGeography(s, pilotZip, cityKey))
       .map((s) => buildResult(s, pilotZip));
 
     const hasRelevantOrResource = false;
@@ -351,26 +359,26 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
     };
   }
 
-  const relevant = SOURCES
+  const relevant = getAllSources()
     .filter(
       (s) =>
         s.class === RESULT_CLASS.RELEVANT &&
         sourceMatchesObject(s, objectClass) &&
-        sourceMatchesGeography(s, pilotZip),
+        sourceMatchesGeography(s, pilotZip, cityKey),
     )
     .map((s) => buildResult(s, pilotZip));
 
-  const resources = SOURCES
+  const resources = getAllSources()
     .filter((s) => {
       if (s.class !== RESULT_CLASS.RESOURCE) return false;
       if (!sourceMatchesObject(s, objectClass)) return false;
       if (s.national) return true;
-      return sourceMatchesGeography(s, pilotZip);
+      return sourceMatchesGeography(s, pilotZip, cityKey);
     })
     .map((s) => buildResult(s, pilotZip));
 
-  const fallbacks = SOURCES
-    .filter((s) => fallbackMatchesGeography(s, pilotZip))
+  const fallbacks = getAllSources()
+    .filter((s) => fallbackMatchesGeography(s, pilotZip, cityKey))
     .map((s) => buildResult(s, pilotZip));
 
   const hasRelevantOrResource = relevant.length > 0 || resources.length > 0;
@@ -399,7 +407,7 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
     results = [...results, ...fallbacks];
   }
 
-  const sourceMeta = new Map(SOURCES.map((s) => [s.id, s]));
+  const sourceMeta = new Map(getAllSources().map((s) => [s.id, s]));
   results.sort((a, b) => {
     const rankDiff = (CLASS_RANK[a.class] || 99) - (CLASS_RANK[b.class] || 99);
     if (rankDiff !== 0) return rankDiff;
