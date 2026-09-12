@@ -16,6 +16,43 @@ Research acceptance comment: `5649061758`.
 
 CloudDev must not access `pim-control`, `caniborrowthis-research`, OzarksKey, Hostinger, production credentials, payments, or unrelated repositories. All source material required for this mission is local to this branch.
 
+## Startup / PR subscription requirement
+
+Before any implementation mutation, CloudDev must:
+
+1. open the controlling product PR for this branch;
+2. subscribe to that PR using the available GitHub/Cursor PR subscription mechanism;
+3. confirm the subscription actually succeeded for the active worker session;
+4. read the complete PR conversation and this work order;
+5. post a top-level startup receipt on the PR.
+
+The startup receipt must include:
+- role: fresh CloudDev session;
+- repository;
+- controlling PR number;
+- exact branch and head observed;
+- base production commit;
+- this work-order path;
+- confirmation that the two transfer files and manifest were read;
+- SHA-256 verification result for both transfer files;
+- `PR SUBSCRIPTION: CONFIRMED`;
+- actual subscription mechanism/result;
+- confirmation that new Primary top-level PR comments are expected to reach this session without founder relay;
+- repository boundary: product repo only;
+- first substantive implementation batch;
+- next already-authorized implementation batch;
+- terminal state `CIBT_PASS_011_READY_FOR_PRIMARY_REVIEW`.
+
+A posted instruction or PR URL is not dispatch proof.
+
+If CloudDev cannot actually subscribe to the PR, STOP before implementation and post:
+
+`CIBT_PASS_011_PR_SUBSCRIPTION_UNAVAILABLE`
+
+Do not substitute branch polling, PR ownership, or comment acknowledgement for subscription.
+
+After a valid receipt, continue the already-authorized work without waiting for Jonathan. Primary review comments on the subscribed PR are bounded work orders within this pass unless they explicitly HOLD the mission.
+
 ## Business objective
 
 Move CIBT materially toward passive completion by making the accepted Ozarks region useful across the current OzarksKey city footprint without turning CIBT into an exact-inventory service.
