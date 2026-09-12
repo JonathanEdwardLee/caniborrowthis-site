@@ -1,4 +1,6 @@
-/** Frozen pilot ZIP centroids — only these are supported. */
+import { OZARKS_SOURCES, OZARKS_ZIP_CENTROIDS } from './ozarks-generated.js?v=pass011';
+
+/** Frozen Pass-010 Springfield centroid — Ozarks transfer points do not replace this. */
 const SPRINGFIELD_MO_CENTROID = { label: 'Springfield, MO', lat: 37.208957, lon: -93.292298 };
 
 /** Springfield-resident program baseline ZIPs (excludes Christian/Webster County Springfield mailing ZIPs). */
@@ -16,6 +18,7 @@ export const SPRINGFIELD_MO_ZIPS = [
   '65814',
   '65817',
   '65890',
+  '65897',
   '65898',
   '65899',
 ];
@@ -24,7 +27,7 @@ const SPRINGFIELD_MO_PILOT_ZIPS = Object.fromEntries(
   SPRINGFIELD_MO_ZIPS.map((zip) => [zip, { ...SPRINGFIELD_MO_CENTROID }]),
 );
 
-export const PILOT_ZIPS = {
+const PASS010_PILOT_ZIPS = {
   ...SPRINGFIELD_MO_PILOT_ZIPS,
   '72653': { label: 'Mountain Home, AR', lat: 36.335376, lon: -92.385254 },
   '16693': { label: 'Williamsburg, PA', lat: 40.4524, lon: -78.2389 },
@@ -32,6 +35,12 @@ export const PILOT_ZIPS = {
   '35967': { label: 'Fort Payne, AL', lat: 34.4071, lon: -85.7046 },
   '01103': { label: 'Springfield, MA', lat: 42.10355, lon: -72.59026 },
   '90210': { label: 'Beverly Hills, CA', lat: 34.1031, lon: -118.4163, noApprovedSource: true },
+};
+
+/** Ozarks representative ZIPs first; Pass-010 centroids remain authoritative on collisions. */
+export const PILOT_ZIPS = {
+  ...OZARKS_ZIP_CENTROIDS,
+  ...PASS010_PILOT_ZIPS,
 };
 
 export const RESULT_CLASS = {
@@ -188,3 +197,8 @@ export const SOURCES = [
     reviewDate: '2026-09-09',
   },
 ];
+
+/** Frozen Pass-010 sources plus generated Ozarks sources. Tests that pin SOURCES.length stay on the frozen nine. */
+export function getAllSources() {
+  return [...SOURCES, ...OZARKS_SOURCES];
+}

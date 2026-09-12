@@ -58,7 +58,7 @@ describe('P4-01 browser intro copy', () => {
     assert.match(body, /Library of Things/i);
     assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
 
-    await page.screenshot({ path: '/workspace/evidence/pass010-desktop-intro.png', fullPage: true });
+    await page.screenshot({ path: '/workspace/evidence/pass011-desktop-intro.png', fullPage: true });
     await browser.close();
   });
 });
@@ -98,7 +98,7 @@ describe('SC-08 browser geolocation denied', () => {
 });
 
 describe('P5-04 browser release marker and distant geo verification', () => {
-  it('exposes pass010 marker and continues distant geo search without outside-limit dead end', async () => {
+  it('exposes pass011 marker and continues distant geo search without outside-limit dead end', async () => {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -111,11 +111,11 @@ describe('P5-04 browser release marker and distant geo verification', () => {
 
     await page.goto(ctx.baseUrl);
     const marker = await page.locator('#cibt-release-marker');
-    assert.equal(await marker.getAttribute('data-release'), 'pass010');
+    assert.equal(await marker.getAttribute('data-release'), 'pass011');
     assert.equal(await marker.getAttribute('data-commit'), null);
 
     const metaRelease = await page.locator('meta[name="cibt-release"]').getAttribute('content');
-    assert.equal(metaRelease, 'pass010');
+    assert.equal(metaRelease, 'pass011');
 
     await page.selectOption('#object-input', 'OBD-II scanner');
     await page.click('#locate-btn');
@@ -151,7 +151,10 @@ describe('P5-05 browser geo near 90210 skips no-source centroid', () => {
     const zip = await page.locator('#zip-input').inputValue();
     assert.equal(zip, '');
     assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
-    assert.match(await page.locator('.result-card').first().innerText(), /Library Telescope Program|Baxter County Library/i);
+    assert.match(
+      await page.locator('.result-card').first().innerText(),
+      /Library Telescope Program|Baxter County Library|Bentonville Public Library|Rogers Public Library|Boone County Library/i,
+    );
 
     await browser.close();
   });
@@ -210,7 +213,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(await page.locator('.result-card').first().innerText(), /Laverne Schell Tool Library/i);
     assert.equal(await page.locator('#zip-input').inputValue(), '');
     await page.screenshot({
-      path: '/workspace/evidence/pass010-mobile-springfield-pressure-washer-geo.png',
+      path: '/workspace/evidence/pass011-mobile-springfield-pressure-washer-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -236,7 +239,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(cardText, /Maker Space/i);
     assert.match(cardText, /On-site equipment resource — not a take-home loan/i);
     await page.screenshot({
-      path: '/workspace/evidence/pass010-mobile-springfield-3d-printer-geo.png',
+      path: '/workspace/evidence/pass011-mobile-springfield-3d-printer-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -261,7 +264,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.equal(await page.locator('#zip-input').inputValue(), '');
     assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
     await page.screenshot({
-      path: '/workspace/evidence/pass010-mobile-mountain-home-telescope-geo.png',
+      path: '/workspace/evidence/pass011-mobile-mountain-home-telescope-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -279,7 +282,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
     assert.equal(await page.locator('#zip-input').inputValue(), '72653');
     await page.screenshot({
-      path: '/workspace/evidence/pass010-mobile-72653-fishing-pole-zip.png',
+      path: '/workspace/evidence/pass011-mobile-72653-fishing-pole-zip.png',
       fullPage: true,
     });
     await browser.close();
@@ -335,7 +338,7 @@ describe('P10 browser guided discovery and explainer', () => {
     assert.match(await page.locator('#cibt-explainer').innerText(), /Borrow before you buy/i);
 
     await page.screenshot({
-      path: '/workspace/evidence/pass010-mobile-default-telescope-search.png',
+      path: '/workspace/evidence/pass011-mobile-default-telescope-search.png',
       fullPage: true,
     });
     await browser.close();
@@ -403,6 +406,112 @@ describe('SC-10 browser mobile keyboard accessibility', () => {
     });
     assert.ok(ctaFocused, 'result CTA should be keyboard reachable');
 
+    await browser.close();
+  });
+});
+
+describe('P11 browser Ozarks coverage evidence', () => {
+  it('Springfield specialist pressure washer still routes to the tool library', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    await page.selectOption('#object-input', 'pressure washer');
+    await page.fill('#zip-input', '65807');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    assert.match(await page.locator('.result-card').first().innerText(), /Laverne Schell Tool Library/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass011-springfield-specialist.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+
+  it('Mountain Home specialist fishing pole still routes to Baxter special collections', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    await page.selectOption('#object-input', 'fishing pole');
+    await page.fill('#zip-input', '72653');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass011-mountain-home-specialist.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+
+  it('Lampe generic fallback is ask/check only', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    await page.selectOption('#object-input', 'garden tool');
+    await page.fill('#zip-input', '65681');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    const text = await page.locator('#results').innerText();
+    assert.match(text, /Nearby library to ask/i);
+    assert.match(text, /ask\/check/i);
+    assert.doesNotMatch(text, /available now|in stock/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass011-lampe-generic-fallback.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+
+  it('Eureka Springs ZIP remains a distinct route', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    await page.fill('#zip-input', '72632');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    const text = await page.locator('#results').innerText();
+    assert.match(text, /Eureka Springs|Arkansas State Library/i);
+    assert.doesNotMatch(text, /available now|in stock/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass011-eureka-springs.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+
+  it('unsupported well-formed ZIP is not treated as malformed', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    await page.fill('#zip-input', '99999');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('#status-message:not([hidden])');
+    const status = await page.locator('#status-message').textContent();
+    assert.match(status, /don't cover that ZIP yet/i);
+    assert.doesNotMatch(status, /valid 5-digit ZIP/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass011-unsupported-zip.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+
+  it('Ozarks mobile layout has no horizontal overflow', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.goto(ctx.baseUrl);
+    await page.fill('#zip-input', '65681');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    const overflow = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    assert.ok(overflow.scrollWidth <= overflow.clientWidth);
+    await page.screenshot({
+      path: '/workspace/evidence/pass011-mobile-lampe.png',
+      fullPage: true,
+    });
     await browser.close();
   });
 });
