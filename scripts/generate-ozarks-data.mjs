@@ -161,11 +161,14 @@ function titleCase(name) {
     .join(' ');
 }
 
-function specialistFromProbe(probe, zip) {
+function specialistFromProbe(probe, zip, routeCityKey, zipIsConflicting) {
   const key = `${probe.city}|${probe.state}|${probe.category_family}`;
   const reviewDate = probe.check_date || '2026-09-12';
   const url = probe.evidence_url || probe.fallback_url;
   const org = probe.fallback_org;
+  const geography = zipIsConflicting
+    ? { geographyZips: [], geographyCityKeys: [routeCityKey] }
+    : { geographyZips: [zip], geographyCityKeys: [routeCityKey] };
 
   if (probe.status !== 'ACCEPTED_CANDIDATE') return null;
   if (PASS010_OWNED_CITIES.has(cityKey(probe.city, probe.state))) return null;
@@ -176,7 +179,7 @@ function specialistFromProbe(probe, zip) {
       class: 'RELEVANT_BORROWING_PROGRAM',
       url,
       title: `${org} — Library of Things (telescope)`,
-      geographyZips: [zip],
+      ...geography,
       objectClasses: ['TELESCOPE'],
       note: 'Official Library of Things listing names telescope as a checkout category. Check the source for inventory and eligibility. This is not a current-inventory claim.',
       reviewDate,
@@ -190,7 +193,7 @@ function specialistFromProbe(probe, zip) {
       class: 'REGIONAL_OR_SPECIALIST_RESOURCE',
       url,
       title: `${org} — Library of Things (DIY tools)`,
-      geographyZips: [zip],
+      ...geography,
       objectClasses: ['HOME_REPAIR_TOOL'],
       linkOnly: true,
       note: 'Official Library of Things listing names DIY tools as a category. That does not prove a specific tool (for example a pressure washer) is offered or currently available. Check the source.',
@@ -205,7 +208,7 @@ function specialistFromProbe(probe, zip) {
       class: 'REGIONAL_OR_SPECIALIST_RESOURCE',
       url,
       title: `${org} — BPL Makerspace`,
-      geographyZips: [zip],
+      ...geography,
       objectClasses: [...MAKER_OBJECT_CLASSES],
       onsiteResource: true,
       note: 'Official makerspace page retrieved. On-site equipment access is not evidence a selected object is present to borrow at query time. Check the source for access rules.',
@@ -220,7 +223,7 @@ function specialistFromProbe(probe, zip) {
       class: 'REGIONAL_OR_SPECIALIST_RESOURCE',
       url,
       title: `${org} — Fabrication & Robotics Lab`,
-      geographyZips: [zip],
+      ...geography,
       objectClasses: [...MAKER_OBJECT_CLASSES],
       onsiteResource: true,
       note: 'Official Fabrication & Robotics Lab page retrieved. Access rules remain on the source page. This is not a current-availability or take-home inventory claim.',
@@ -235,7 +238,7 @@ function specialistFromProbe(probe, zip) {
       class: 'RELEVANT_BORROWING_PROGRAM',
       url,
       title: `${org} — telescope checkout`,
-      geographyZips: [zip],
+      ...geography,
       objectClasses: ['TELESCOPE'],
       note: 'Official telescope checkout page retrieved. Eligibility and current availability remain on the source page.',
       reviewDate,
@@ -249,7 +252,7 @@ function specialistFromProbe(probe, zip) {
       class: 'RELEVANT_BORROWING_PROGRAM',
       url,
       title: `${org} — telescope lending program`,
-      geographyZips: [zip],
+      ...geography,
       objectClasses: ['TELESCOPE'],
       note: 'Official telescope lending program page retrieved. Check the source for current availability and eligibility.',
       reviewDate,
@@ -290,9 +293,39 @@ if (holds.length !== 1 || holds[0].city_filter_name !== 'Eureka' || holds[0].sta
   throw new Error('Eureka AR REVIEW_HOLD contract broken');
 }
 
+const zipGroups = new Map();
+for (const row of eligible) {
+  const zip = row.representative_zip;
+  if (!zip) continue;
+  if (!zipGroups.has(zip)) zipGroups.set(zip, []);
+  zipGroups.get(zip).push(row);
+}
+
+const sharedRepresentativeZips = {};
+for (const [zip, rows] of zipGroups) {
+  if (rows.length < 2) continue;
+  const urls = [...new Set(rows.map((r) => r.destination_url))];
+  const hasSpecialistSupported = rows.some(
+    (r) => r.specialist_override_state === 'specialist_supported',
+  );
+  const conflicting = hasSpecialistSupported && urls.length > 1;
+  sharedRepresentativeZips[zip] = {
+    kind: conflicting ? 'conflicting' : 'destination_equivalent',
+    cities: rows.map((r) => `${r.city_filter_name}, ${r.state}`),
+    destinationUrls: urls,
+  };
+}
+
+const conflictingZips = new Set(
+  Object.entries(sharedRepresentativeZips)
+    .filter(([, meta]) => meta.kind === 'conflicting')
+    .map(([zip]) => zip),
+);
+
 const zipOwners = new Map();
 for (const row of eligible) {
   const zip = row.representative_zip;
+  if (conflictingZips.has(zip)) continue;
   const prev = zipOwners.get(zip);
   if (!prev || zipScore(row) > zipScore(prev)) zipOwners.set(zip, row);
 }
@@ -321,46 +354,76 @@ for (const row of cities) {
     specialistOverrideState: row.specialist_override_state,
     holdNote: row.hold_note || '',
   });
+}
 
-  if (!eligibleRoute) continue;
-  if (PASS010_OWNED_CITIES.has(key)) continue;
-
-  const zip = row.representative_zip;
-  if (zipOwners.get(zip) !== row) continue;
+for (const [zip, rows] of zipGroups) {
   if (PASS010_OWNED_ZIPS.has(zip)) {
     skippedFallbackZips.push(zip);
     continue;
   }
+  if (rows.every((r) => PASS010_OWNED_CITIES.has(cityKey(r.city_filter_name, r.state)))) {
+    continue;
+  }
 
+  if (conflictingZips.has(zip)) {
+    const lats = rows.map((r) => Number(r.intpt_lat)).filter((n) => Number.isFinite(n));
+    const lons = rows.map((r) => Number(r.intpt_lon)).filter((n) => Number.isFinite(n));
+    const conservative = rows.find((r) => r.destination_class === 'STATE_LIBRARY_HOME_HANDOFF') || rows[0];
+    const cityNames = rows.map((r) => r.city_filter_name).join(', ');
+    ozarksZipCentroids[zip] = {
+      label: `${cityNames}, ${conservative.state} (shared ZIP routing context)`,
+      lat: lats.reduce((a, b) => a + b, 0) / lats.length,
+      lon: lons.reduce((a, b) => a + b, 0) / lons.length,
+      ozarksCityKey: null,
+      routingContext: true,
+      ambiguousSharedZip: true,
+    };
+    fallbackSources.push({
+      id: `OZ_FALLBACK_SHARED_${zip}`,
+      class: 'NEARBY_LIBRARY_TO_ASK',
+      url: conservative.destination_url,
+      title: fallbackTitle(conservative),
+      geographyZips: [zip],
+      geographyCityKeys: [],
+      objectClasses: null,
+      objectRelevance: 'NONE_ASSERTED',
+      note: `${fallbackNote(conservative)} This ZIP is shared by more than one reviewed city, so this is a conservative official page to ask/check — not a city-specific specialist claim.`,
+      reviewDate: conservative.check_date || '2026-09-12',
+      probeStatus: 'FALLBACK',
+      destinationClass: conservative.destination_class,
+      cityKey: null,
+      sharedZip: zip,
+    });
+    continue;
+  }
+
+  const owner = zipOwners.get(zip);
+  if (!owner) continue;
+  if (PASS010_OWNED_CITIES.has(cityKey(owner.city_filter_name, owner.state))) continue;
+
+  const ownerKey = cityKey(owner.city_filter_name, owner.state);
   ozarksZipCentroids[zip] = {
-    label: `${row.city_filter_name}, ${row.state}`,
-    lat,
-    lon,
-    ozarksCityKey: key,
+    label: `${owner.city_filter_name}, ${owner.state}`,
+    lat: Number(owner.intpt_lat),
+    lon: Number(owner.intpt_lon),
+    ozarksCityKey: ownerKey,
     routingContext: true,
   };
 
   fallbackSources.push({
-    id: `OZ_FALLBACK_${row.filter_id}_${row.state}_${row.city_filter_name.replace(/\s+/g, '_').toUpperCase()}`,
+    id: `OZ_FALLBACK_${owner.filter_id}_${owner.state}_${owner.city_filter_name.replace(/\s+/g, '_').toUpperCase()}`,
     class: 'NEARBY_LIBRARY_TO_ASK',
-    url: row.destination_url,
-    title: fallbackTitle(row),
+    url: owner.destination_url,
+    title: fallbackTitle(owner),
     geographyZips: [zip],
     objectClasses: null,
     objectRelevance: 'NONE_ASSERTED',
-    note: fallbackNote(row),
-    reviewDate: row.check_date || '2026-09-12',
+    note: fallbackNote(owner),
+    reviewDate: owner.check_date || '2026-09-12',
     probeStatus: 'FALLBACK',
-    destinationClass: row.destination_class,
-    cityKey: key,
+    destinationClass: owner.destination_class,
+    cityKey: ownerKey,
   });
-}
-
-const probesByCity = new Map();
-for (const probe of probes) {
-  const k = cityKey(probe.city, probe.state);
-  if (!probesByCity.has(k)) probesByCity.set(k, []);
-  probesByCity.get(k).push(probe);
 }
 
 const specialistSources = [];
@@ -387,7 +450,13 @@ for (const probe of probes) {
     (r) => r.city_filter_name === probe.city && r.state === probe.state,
   );
   if (!cityRow) continue;
-  const spec = specialistFromProbe(probe, cityRow.representative_zip);
+  const routeCityKey = cityKey(probe.city, probe.state);
+  const spec = specialistFromProbe(
+    probe,
+    cityRow.representative_zip,
+    routeCityKey,
+    conflictingZips.has(cityRow.representative_zip),
+  );
   if (spec) specialistSources.push(spec);
 }
 
@@ -411,7 +480,11 @@ export const OZARKS_TRANSFER_COUNTS = {
   unpublishedCandidateProbes: ${unpublished.CANDIDATE},
   unpublishedFallbackProbes: ${unpublished.FALLBACK},
   acceptedCandidateSkippedPass010: ${unpublished.ACCEPTED_SKIPPED_PASS010},
+  sharedRepresentativeZips: ${Object.keys(sharedRepresentativeZips).length},
+  conflictingSharedZips: ${conflictingZips.size},
 };
+
+export const OZARKS_SHARED_REPRESENTATIVE_ZIPS = ${JSON.stringify(sharedRepresentativeZips, null, 2)};
 
 export const OZARKS_CITIES = ${JSON.stringify(ozarksCities, null, 2)};
 

@@ -25,6 +25,7 @@ let activeZip = '';
 let locationMode = 'ZIP';
 let pendingGeoContext = null;
 let lastGeoDistanceMi = null;
+let lastGeoCityKey = null;
 let geoTargetKind = undefined;
 
 function populateObjectSelect() {
@@ -122,6 +123,7 @@ function runSearch() {
     locationMode,
     geoDistanceMi: locationMode === 'GEO' ? lastGeoDistanceMi : undefined,
     geoTargetKind: locationMode === 'GEO' ? geoTargetKind : undefined,
+    cityKey: locationMode === 'GEO' ? lastGeoCityKey : undefined,
   });
 
   if (pendingGeoContext) {
@@ -150,6 +152,7 @@ form.addEventListener('submit', (e) => {
   activeZip = zipInput.value.trim();
   pendingGeoContext = null;
   lastGeoDistanceMi = null;
+  lastGeoCityKey = null;
   geoTargetKind = undefined;
   runSearch();
 });
@@ -177,10 +180,12 @@ locateBtn.addEventListener('click', () => {
       geoTargetKind = undefined;
       pendingGeoContext = null;
       lastGeoDistanceMi = null;
+      lastGeoCityKey = null;
       activeZip = '';
 
       if (target.kind === 'zip') {
         activeZip = target.zip;
+        lastGeoCityKey = target.cityKey || null;
         lastGeoDistanceMi = target.distanceMi;
         zipInput.value = '';
         pendingGeoContext = formatGeoCoverageContext(target.label, target.distanceMi);

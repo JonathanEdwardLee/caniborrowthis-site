@@ -13,6 +13,7 @@ import {
   OZARKS_SOURCES,
   OZARKS_TRANSFER_HASHES,
   OZARKS_TRANSFER_COUNTS,
+  OZARKS_SHARED_REPRESENTATIVE_ZIPS,
 } from '../js/ozarks-generated.js';
 import { bridgeEventToGa4, FORBIDDEN_GA_KEYS } from '../js/measure.js';
 import packageJson from '../package.json' with { type: 'json' };
@@ -213,6 +214,101 @@ describe('P11-11 GEO does not fabricate detected ZIP', () => {
     const appJs = await readFile(join(root, 'js', 'app.js'), 'utf8');
     assert.doesNotMatch(appJs, /zipInput\.value = target\.zip/);
     assert.match(appJs, /zipInput\.value = ''/);
+  });
+});
+
+describe('P11-13 shared representative ZIP honesty', () => {
+  const farmington = getOzarksCity('Farmington', 'AR');
+  const prairieGrove = getOzarksCity('Prairie Grove', 'AR');
+  const fayetteville = getOzarksCity('Fayetteville', 'AR');
+
+  it('identifies shared representative ZIPs and marks 72730 as conflicting', () => {
+    assert.ok(Object.keys(OZARKS_SHARED_REPRESENTATIVE_ZIPS).length >= 3);
+    assert.equal(OZARKS_SHARED_REPRESENTATIVE_ZIPS['72730'].kind, 'conflicting');
+    assert.ok(
+      OZARKS_SHARED_REPRESENTATIVE_ZIPS['72730'].cities.includes('Farmington, AR'),
+    );
+    assert.ok(
+      OZARKS_SHARED_REPRESENTATIVE_ZIPS['72730'].cities.includes('Fayetteville, AR'),
+    );
+    assert.ok(
+      OZARKS_SHARED_REPRESENTATIVE_ZIPS['72730'].cities.includes('Prairie Grove, AR'),
+    );
+    assert.equal(OZARKS_SHARED_REPRESENTATIVE_ZIPS['65726'].kind, 'destination_equivalent');
+    assert.equal(OZARKS_SHARED_REPRESENTATIVE_ZIPS['72762'].kind, 'destination_equivalent');
+  });
+
+  it('does not auto-promote Fayetteville specialists on manual ZIP 72730', () => {
+    const out = search({ objectText: '3D printer', zip: '72730', locationMode: 'ZIP' });
+    assert.ok(!out.results.some((r) => r.sourceId === 'OZ_FAYETTEVILLE_FAB_LAB'));
+    assert.ok(out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
+    assert.ok(out.results.some((r) => /Arkansas State Library/i.test(r.title)));
+  });
+
+  it('GEO at Farmington cannot pair a Farmington context with Fayetteville-specific results', () => {
+    const target = resolveGeoSearchTarget(farmington.lat, farmington.lon, '3D printer');
+    if (target.kind === 'zip' && /Farmington/i.test(target.label)) {
+      const out = search({
+        objectText: '3D printer',
+        zip: target.zip,
+        locationMode: 'GEO',
+        geoDistanceMi: target.distanceMi,
+        cityKey: target.cityKey,
+      });
+      assert.ok(!out.results.some((r) => r.sourceId === 'OZ_FAYETTEVILLE_FAB_LAB'));
+    } else {
+      assert.ok(!/Farmington/i.test(target.label || ''));
+    }
+
+    const fallbackTarget = resolveGeoSearchTarget(farmington.lat, farmington.lon, 'chainsaw');
+    assert.equal(fallbackTarget.kind, 'zip');
+    assert.match(fallbackTarget.label, /Farmington/i);
+    assert.equal(fallbackTarget.cityKey, 'Farmington|AR');
+    const fallbackOut = search({
+      objectText: 'chainsaw',
+      zip: fallbackTarget.zip,
+      locationMode: 'GEO',
+      geoDistanceMi: fallbackTarget.distanceMi,
+      cityKey: fallbackTarget.cityKey,
+    });
+    assert.ok(!fallbackOut.results.some((r) => r.sourceId === 'OZ_FAYETTEVILLE_FAB_LAB'));
+    assert.ok(!fallbackOut.results.some((r) => /Fabrication/i.test(r.title)));
+  });
+
+  it('GEO at Prairie Grove cannot pair a Prairie Grove context with Fayetteville-specific results', () => {
+    const target = resolveGeoSearchTarget(prairieGrove.lat, prairieGrove.lon, 'chainsaw');
+    assert.equal(target.kind, 'zip');
+    assert.match(target.label, /Prairie Grove/i);
+    assert.equal(target.cityKey, 'Prairie Grove|AR');
+    const out = search({
+      objectText: 'chainsaw',
+      zip: target.zip,
+      locationMode: 'GEO',
+      geoDistanceMi: target.distanceMi,
+      cityKey: target.cityKey,
+    });
+    assert.ok(!out.results.some((r) => r.sourceId === 'OZ_FAYETTEVILLE_FAB_LAB'));
+    assert.ok(!out.results.some((r) => /Fabrication/i.test(r.title)));
+  });
+
+  it('Fayetteville-specific GEO routing is driven by retained city identity', () => {
+    const target = resolveGeoSearchTarget(fayetteville.lat, fayetteville.lon, '3D printer');
+    assert.equal(target.kind, 'zip');
+    assert.equal(target.cityKey, 'Fayetteville|AR');
+    assert.match(target.label, /Fayetteville/i);
+    const out = search({
+      objectText: '3D printer',
+      zip: target.zip,
+      locationMode: 'GEO',
+      geoDistanceMi: target.distanceMi,
+      cityKey: target.cityKey,
+    });
+    assert.ok(out.results.some((r) => r.sourceId === 'OZ_FAYETTEVILLE_FAB_LAB'));
+  });
+
+  it('destination-equivalent shared ZIP 65726 still routes to an official ask/check source', () => {
+    const out = search({ objectText: 'garden tool', zip: '65726', locationMode: 'ZIP' });
+    assert.ok(out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
   });
 });
 

@@ -16,6 +16,44 @@ export const OZARKS_TRANSFER_COUNTS = {
   unpublishedCandidateProbes: 6,
   unpublishedFallbackProbes: 58,
   acceptedCandidateSkippedPass010: 4,
+  sharedRepresentativeZips: 3,
+  conflictingSharedZips: 1,
+};
+
+export const OZARKS_SHARED_REPRESENTATIVE_ZIPS = {
+  "65726": {
+    "kind": "destination_equivalent",
+    "cities": [
+      "Branson, MO",
+      "Hollister, MO",
+      "Point Lookout, MO"
+    ],
+    "destinationUrls": [
+      "https://lcozarks.org/about/"
+    ]
+  },
+  "72730": {
+    "kind": "conflicting",
+    "cities": [
+      "Farmington, AR",
+      "Fayetteville, AR",
+      "Prairie Grove, AR"
+    ],
+    "destinationUrls": [
+      "https://library.arkansas.gov/",
+      "https://faylib.org/"
+    ]
+  },
+  "72762": {
+    "kind": "destination_equivalent",
+    "cities": [
+      "Springdale, AR",
+      "Tontitown, AR"
+    ],
+    "destinationUrls": [
+      "https://library.arkansas.gov/"
+    ]
+  }
 };
 
 export const OZARKS_CITIES = [
@@ -1500,11 +1538,12 @@ export const OZARKS_ZIP_CENTROIDS = {
     "routingContext": true
   },
   "72730": {
-    "label": "Fayetteville, AR",
-    "lat": 36.071451,
-    "lon": -94.166679,
-    "ozarksCityKey": "Fayetteville|AR",
-    "routingContext": true
+    "label": "Farmington, Fayetteville, Prairie Grove, AR (shared ZIP routing context)",
+    "lat": 36.03138166666667,
+    "lon": -94.24084266666667,
+    "ozarksCityKey": null,
+    "routingContext": true,
+    "ambiguousSharedZip": true
   },
   "72734": {
     "label": "Gentry, AR",
@@ -1570,8 +1609,9 @@ export const OZARKS_SOURCES = [
     "class": "REGIONAL_OR_SPECIALIST_RESOURCE",
     "url": "https://faylib.org/13661",
     "title": "Fayetteville Public Library — Fabrication & Robotics Lab",
-    "geographyZips": [
-      "72730"
+    "geographyZips": [],
+    "geographyCityKeys": [
+      "Fayetteville|AR"
     ],
     "objectClasses": [
       "THREE_D_PRINTER",
@@ -1595,6 +1635,9 @@ export const OZARKS_SOURCES = [
     "geographyZips": [
       "72712"
     ],
+    "geographyCityKeys": [
+      "Bentonville|AR"
+    ],
     "objectClasses": [
       "TELESCOPE"
     ],
@@ -1610,6 +1653,9 @@ export const OZARKS_SOURCES = [
     "title": "Bentonville Public Library — Library of Things (DIY tools)",
     "geographyZips": [
       "72712"
+    ],
+    "geographyCityKeys": [
+      "Bentonville|AR"
     ],
     "objectClasses": [
       "HOME_REPAIR_TOOL"
@@ -1627,6 +1673,9 @@ export const OZARKS_SOURCES = [
     "title": "Bentonville Public Library — BPL Makerspace",
     "geographyZips": [
       "72712"
+    ],
+    "geographyCityKeys": [
+      "Bentonville|AR"
     ],
     "objectClasses": [
       "THREE_D_PRINTER",
@@ -1650,6 +1699,9 @@ export const OZARKS_SOURCES = [
     "geographyZips": [
       "72758"
     ],
+    "geographyCityKeys": [
+      "Rogers|AR"
+    ],
     "objectClasses": [
       "TELESCOPE"
     ],
@@ -1665,6 +1717,9 @@ export const OZARKS_SOURCES = [
     "title": "Boone County Library — telescope lending program",
     "geographyZips": [
       "72601"
+    ],
+    "geographyCityKeys": [
+      "Harrison|AR"
     ],
     "objectClasses": [
       "TELESCOPE"
@@ -1931,20 +1986,22 @@ export const OZARKS_SOURCES = [
     "cityKey": "Eureka Springs|AR"
   },
   {
-    "id": "OZ_FALLBACK_22_AR_FAYETTEVILLE",
+    "id": "OZ_FALLBACK_SHARED_72730",
     "class": "NEARBY_LIBRARY_TO_ASK",
-    "url": "https://faylib.org/",
-    "title": "Fayetteville Public Library — official page to ask/check",
+    "url": "https://library.arkansas.gov/",
+    "title": "Arkansas State Library — official page to ask/check",
     "geographyZips": [
       "72730"
     ],
+    "geographyCityKeys": [],
     "objectClasses": null,
     "objectRelevance": "NONE_ASSERTED",
-    "note": "This is an official library/resource page to ask/check. No selected-object relevance or current availability is asserted. The linked source is the final authority.",
+    "note": "This is an official place to ask/check, not a specific library holdings claim. No selected-object relevance or current availability is asserted. The linked source is the final authority. This ZIP is shared by more than one reviewed city, so this is a conservative official page to ask/check — not a city-specific specialist claim.",
     "reviewDate": "2026-09-12",
     "probeStatus": "FALLBACK",
-    "destinationClass": "DIRECT_LIBRARY_SYSTEM",
-    "cityKey": "Fayetteville|AR"
+    "destinationClass": "STATE_LIBRARY_HOME_HANDOFF",
+    "cityKey": null,
+    "sharedZip": "72730"
   },
   {
     "id": "OZ_FALLBACK_23_AR_GENTRY",

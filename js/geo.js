@@ -52,7 +52,12 @@ function isGeographyBoundObjectRelevantSource(source, objectClass) {
   if (source.national) return false;
   if (!sourceMatchesObject(source, objectClass)) return false;
   if (source.class === RESULT_CLASS.RELEVANT) return true;
-  if (source.class === RESULT_CLASS.RESOURCE && source.geographyZips?.length) return true;
+  if (
+    source.class === RESULT_CLASS.RESOURCE &&
+    (source.geographyZips?.length || source.geographyCityKeys?.length)
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -61,11 +66,29 @@ function findNearestObjectRelevantZip(lat, lon, objectClass) {
 
   for (const source of getAllSources()) {
     if (!isGeographyBoundObjectRelevantSource(source, objectClass)) continue;
-    for (const zip of source.geographyZips) {
+    for (const routeCityKey of source.geographyCityKeys || []) {
+      const city = OZARKS_CITIES.find((row) => row.key === routeCityKey);
+      if (!city?.productRouteEligible || city.lat == null || city.lon == null) continue;
+      const distanceMi = distanceMiles(lat, lon, city.lat, city.lon);
+      candidates.push({
+        zip: city.representativeZip,
+        cityKey: city.key,
+        distanceMi,
+        label: `${city.city}, ${city.state}`,
+        sourceId: source.id,
+      });
+    }
+    for (const zip of source.geographyZips || []) {
       const info = PILOT_ZIPS[zip];
       if (!info || info.noApprovedSource || info.lat == null || info.lon == null) continue;
       const distanceMi = distanceMiles(lat, lon, info.lat, info.lon);
-      candidates.push({ zip, distanceMi, label: info.label, sourceId: source.id });
+      candidates.push({
+        zip,
+        cityKey: info.ozarksCityKey || null,
+        distanceMi,
+        label: info.label,
+        sourceId: source.id,
+      });
     }
   }
 
@@ -74,13 +97,13 @@ function findNearestObjectRelevantZip(lat, lon, objectClass) {
   return candidates[0];
 }
 
-function considerFallbackCandidate(nearest, lat, lon, zip, pointLat, pointLon, label) {
+function considerFallbackCandidate(nearest, lat, lon, zip, pointLat, pointLon, label, cityKey) {
   if (pointLat == null || pointLon == null || !zip) return nearest;
   const info = PILOT_ZIPS[zip];
   if (!info || info.noApprovedSource) return nearest;
   const distanceMi = distanceMiles(lat, lon, pointLat, pointLon);
   if (distanceMi <= GEO_CONTEXT_THRESHOLD_MI && (!nearest || distanceMi < nearest.distanceMi)) {
-    return { zip, distanceMi, label };
+    return { zip, distanceMi, label, cityKey: cityKey || null };
   }
   return nearest;
 }
@@ -93,7 +116,16 @@ function findNearestFallbackWithinThreshold(lat, lon) {
     for (const zip of source.geographyZips || []) {
       const info = PILOT_ZIPS[zip];
       if (!info || info.lat == null || info.lon == null) continue;
-      nearest = considerFallbackCandidate(nearest, lat, lon, zip, info.lat, info.lon, info.label);
+      nearest = considerFallbackCandidate(
+        nearest,
+        lat,
+        lon,
+        zip,
+        info.lat,
+        info.lon,
+        info.label,
+        info.ozarksCityKey || null,
+      );
     }
   }
 
@@ -107,6 +139,7 @@ function findNearestFallbackWithinThreshold(lat, lon) {
       city.lat,
       city.lon,
       `${city.city}, ${city.state}`,
+      city.key,
     );
   }
 
