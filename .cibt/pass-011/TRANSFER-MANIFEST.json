@@ -1,0 +1,35 @@
+{
+  "packet": "CIBT-PASS-011-OZARKS-TRANSFER",
+  "prepared_by": "CIBT_PRIMARY",
+  "prepared_date": "2026-09-12",
+  "product_base_commit": "15772544ed03d0ec4252725250e5bd0263bb4982",
+  "accepted_research_repo": "JonathanEdwardLee/caniborrowthis-research",
+  "accepted_research_head": "fe0abe8e0ea6e2a93bf60d2e712b4450a50c4dd8",
+  "accepted_research_pr": 1,
+  "accepted_research_primary_comment": 5649061758,
+  "files": {
+    "ozarks_city_filters.csv": {
+      "source_path": "outputs/public_safe/ozarks_city_filters.csv",
+      "source_sha256": "0939f690565efcb09837738159d5864e6ed6918465a4f2eb5962f4e463f6d2c0",
+      "rows": 76,
+      "product_route_eligible": 75,
+      "review_hold": 1
+    },
+    "ozarks_key_city_category_probes_85.csv": {
+      "source_path": "data/derived/ozarks_key_city_category_probes_85.csv",
+      "source_sha256": "615189bf001b8b3a97a7f4451a52aa3343bfb2123845d047b5a312be971c4493",
+      "rows": 85,
+      "key_cities": 17,
+      "category_families": 5
+    }
+  },
+  "eureka_ar": {
+    "status": "REVIEW_HOLD",
+    "product_route_eligible": false,
+    "rule": "Do not infer, merge, geocode, route, or substitute Eureka Springs for Eureka AR."
+  },
+  "product_contract": "OBJECT + LOCATION -> BEST HONEST BORROWING ANSWER -> OFFICIAL/USEFUL SOURCE",
+  "availability_claims_forbidden": true,
+  "new_recurring_cost_authorized": false,
+  "product_publication_authorized": false
+}
