@@ -190,12 +190,12 @@ describe('P8-11 GEO does not present internal routing ZIP as detected ZIP', () =
   });
 });
 
-describe('P8-10 pass012 release identity, dependency state, and accessibility', () => {
-  it('index.html and runtime imports use pass012', async () => {
+describe('P8-10 pass013 release identity, dependency state, and accessibility', () => {
+  it('index.html and runtime imports use pass013', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /cibt-release" content="pass012"/);
-    assert.match(html, /styles\.css\?v=pass012/);
-    assert.match(html, /app\.js\?v=pass012/);
+    assert.match(html, /cibt-release" content="pass013"/);
+    assert.match(html, /styles\.css\?v=pass013/);
+    assert.match(html, /app\.js\?v=pass013/);
   });
 
   it('every relative runtime .js import uses pass012 version query', async () => {
@@ -204,14 +204,14 @@ describe('P8-10 pass012 release identity, dependency state, and accessibility', 
       const relPath = join('js', name);
       const content = await readFile(join(root, relPath), 'utf8');
       for (const [, specifier] of content.matchAll(importPattern)) {
-        assert.match(specifier, /\.js\?v=pass012$/, `${relPath} import "${specifier}"`);
+        assert.match(specifier, /\.js\?v=pass013$/, `${relPath} import "${specifier}"`);
       }
     }
   });
 
-  it('release.js exports pass012 identity', async () => {
-    assert.equal(CIBT_RELEASE.pass, 'pass012');
-    assert.equal(CIBT_RELEASE.version, 'pass012');
+  it('release.js exports pass013 identity', async () => {
+    assert.equal(CIBT_RELEASE.pass, 'pass013');
+    assert.equal(CIBT_RELEASE.version, 'pass013');
   });
 
   it('Playwright remains exact 1.62.1', async () => {

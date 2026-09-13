@@ -1,7 +1,9 @@
 /** Reviewed object families — one canonical normalize value per option. */
-export const DEFAULT_OBJECT_VALUE = 'telescope';
+export const EXPLORE_ALL_VALUE = 'all-explore-nearby';
+export const EXPLORE_ALL_CLASS = 'BROWSE_ALL';
+export const DEFAULT_OBJECT_VALUE = EXPLORE_ALL_VALUE;
 
-export const OBJECT_OPTIONS = [
+export const ITEM_OBJECT_OPTIONS = [
   { label: '3D printer', value: '3D printer', objectClass: 'THREE_D_PRINTER' },
   { label: '3D scanner', value: '3D scanner', objectClass: 'THREE_D_SCANNER' },
   { label: 'Air compressor', value: 'air compressor', objectClass: 'AIR_COMPRESSOR' },
@@ -37,4 +39,14 @@ export const OBJECT_OPTIONS = [
   { label: 'Video transfer equipment', value: 'video transfer equipment', objectClass: 'VIDEO_TRANSFER_EQUIPMENT' },
   { label: 'Vinyl cutter', value: 'vinyl cutter', objectClass: 'VINYL_CUTTER' },
   { label: 'Wet-dry vacuum', value: 'wet-dry vacuum', objectClass: 'WET_DRY_VACUUM' },
+];
+
+export const OBJECT_OPTIONS = [
+  {
+    label: 'All — explore nearby borrowing locations',
+    value: EXPLORE_ALL_VALUE,
+    objectClass: EXPLORE_ALL_CLASS,
+    browseAll: true,
+  },
+  ...ITEM_OBJECT_OPTIONS,
 ];

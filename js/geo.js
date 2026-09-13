@@ -1,10 +1,10 @@
-import { getAllSources, RESULT_CLASS, PILOT_ZIPS } from './data.js?v=pass012';
-import { normalizeObject } from './normalize.js?v=pass012';
-import { OZARKS_CITIES } from './ozarks-generated.js?v=pass012';
+import { getAllSources, RESULT_CLASS, PILOT_ZIPS } from './data.js?v=pass013';
+import { normalizeObject } from './normalize.js?v=pass013';
+import { OZARKS_CITIES } from './ozarks-generated.js?v=pass013';
 import {
   buildImlsSearchCompareSource,
   resolveNationalGeoTarget,
-} from './national-routing.js?v=pass012';
+} from './national-routing.js?v=pass013';
 
 const MILES_PER_KM = 0.621371;
 /** Show geo coverage context when user is farther than this from the centroid (straight-line). */
@@ -198,8 +198,70 @@ export function nearestEligibleCoverageZip(lat, lon) {
  *   | { kind: 'no_zip', objectNorm: object }
  * >}
  */
+function findNearestBrowsePlace(lat, lon) {
+  const candidates = [];
+
+  for (const source of getAllSources()) {
+    if (source.national) continue;
+    if (source.class === RESULT_CLASS.FALLBACK) continue;
+    if (source.class !== RESULT_CLASS.RELEVANT && source.class !== RESULT_CLASS.RESOURCE) continue;
+    for (const routeCityKey of source.geographyCityKeys || []) {
+      const city = OZARKS_CITIES.find((row) => row.key === routeCityKey);
+      if (!city?.productRouteEligible || city.lat == null || city.lon == null) continue;
+      const distanceMi = distanceMiles(lat, lon, city.lat, city.lon);
+      if (distanceMi > GEO_CONTEXT_THRESHOLD_MI) continue;
+      candidates.push({
+        zip: city.representativeZip,
+        cityKey: city.key,
+        distanceMi,
+        label: `${city.city}, ${city.state}`,
+        sourceId: source.id,
+      });
+    }
+    for (const zip of source.geographyZips || []) {
+      const info = PILOT_ZIPS[zip];
+      if (!info || info.noApprovedSource || info.lat == null || info.lon == null) continue;
+      const distanceMi = distanceMiles(lat, lon, info.lat, info.lon);
+      if (distanceMi > GEO_CONTEXT_THRESHOLD_MI) continue;
+      candidates.push({
+        zip,
+        cityKey: info.ozarksCityKey || null,
+        distanceMi,
+        label: info.label,
+        sourceId: source.id,
+      });
+    }
+  }
+
+  const nearbyFallback = findNearestFallbackWithinThreshold(lat, lon);
+  if (nearbyFallback) candidates.push(nearbyFallback);
+
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => a.distanceMi - b.distanceMi);
+  return candidates[0];
+}
+
 export async function resolveGeoSearchTarget(lat, lon, objectText) {
   const objectNorm = normalizeObject(objectText);
+
+  if (objectNorm.status === 'BROWSE_ALL') {
+    const nearby = findNearestBrowsePlace(lat, lon);
+    if (nearby) {
+      return { kind: 'zip', ...nearby, objectNorm };
+    }
+    const nationalTarget = await resolveNationalGeoTarget(lat, lon);
+    if (nationalTarget.kind === 'national_outlet') {
+      return {
+        kind: 'national_outlet',
+        zip: nationalTarget.zip,
+        distanceMi: nationalTarget.distanceMi,
+        label: nationalTarget.label,
+        nationalRoute: nationalTarget.route,
+        objectNorm,
+      };
+    }
+    return { kind: 'no_zip', objectNorm };
+  }
 
   if (objectNorm.status === 'SUPPORTED') {
     const nearestRelevant = findNearestObjectRelevantZip(lat, lon, objectNorm.objectClass);

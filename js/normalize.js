@@ -60,6 +60,10 @@ export function normalizeObject(raw) {
     return { status: 'UNRECOGNIZED', reason: 'empty' };
   }
 
+  if (/^all-explore-nearby$/i.test(trimmed) || /^all\s*[—-]\s*explore nearby/i.test(trimmed)) {
+    return { status: 'BROWSE_ALL', objectClass: 'BROWSE_ALL' };
+  }
+
   for (const rule of EXPLICITLY_UNSUPPORTED) {
     if (rule.test(trimmed)) {
       return { status: 'UNSUPPORTED', reason: 'explicitly_unsupported' };

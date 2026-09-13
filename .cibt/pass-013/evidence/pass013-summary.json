@@ -1,0 +1,112 @@
+{
+  "generated": "2026-09-13T11:20:04.391Z",
+  "matrix": {
+    "bytes": 74992,
+    "sha256": "7730850bb716803b4186bdd334eb0df12b566326edc3c8b676f751e8c4e18ee7",
+    "bytesOk": true,
+    "shaOk": true
+  },
+  "centerCount": 151,
+  "zipProbeCount": 755,
+  "expectedZipProbes": 755,
+  "geoCount": 151,
+  "zipPass": 755,
+  "zipFail": 0,
+  "geoPass": 151,
+  "geoFail": 0,
+  "edgePass": 17,
+  "edgeFail": 0,
+  "pass": 923,
+  "fail": 0,
+  "hold": 0,
+  "failures": [],
+  "edges": [
+    {
+      "name": "malformed_zip_distinct",
+      "status": "PASS",
+      "detail": "Enter a valid 5-digit ZIP."
+    },
+    {
+      "name": "unknown_well_formed_zip",
+      "status": "PASS",
+      "detail": "IMLS Search & Compare — official library finder"
+    },
+    {
+      "name": "former_no_source_90210",
+      "status": "PASS",
+      "detail": "NAT_EXACT_IMLS_OUTLET_ZIP_90210_CA0012_002"
+    },
+    {
+      "name": "72730_conservative",
+      "status": "PASS",
+      "detail": "OZ_FALLBACK_SHARED_72730"
+    },
+    {
+      "name": "springfield_mo_specialist",
+      "status": "PASS",
+      "detail": "S7_SPRINGFIELD_TOOL_LIBRARY"
+    },
+    {
+      "name": "mountain_home_ar_specialist",
+      "status": "PASS",
+      "detail": "S9_BAXTER_SPECIAL_COLLECTIONS"
+    },
+    {
+      "name": "eureka_ar_hold",
+      "status": "PASS",
+      "detail": "{\"eligible\":false,\"zip\":null}"
+    },
+    {
+      "name": "eureka_springs_distinct",
+      "status": "PASS",
+      "detail": "Library Telescope Program — Participating Libraries"
+    },
+    {
+      "name": "dense_urban_nyc",
+      "status": "PASS",
+      "detail": "zip/GEO_NEAREST_ACTIVE_OUTLET"
+    },
+    {
+      "name": "dense_urban_chicago",
+      "status": "PASS",
+      "detail": "zip"
+    },
+    {
+      "name": "state_border_dc",
+      "status": "PASS",
+      "detail": "zip"
+    },
+    {
+      "name": "alaska_long_distance",
+      "status": "PASS",
+      "detail": "zip"
+    },
+    {
+      "name": "hawaii_island",
+      "status": "PASS",
+      "detail": "zip"
+    },
+    {
+      "name": "springfield_mo_geo",
+      "status": "PASS",
+      "detail": "zip"
+    },
+    {
+      "name": "sparse_rural_sample",
+      "status": "PASS",
+      "detail": "sparse_n=15"
+    },
+    {
+      "name": "ga_privacy_boundary",
+      "status": "PASS",
+      "detail": "object_class,location_mode,coverage_state"
+    },
+    {
+      "name": "zero_unsupported_availability_claims",
+      "status": "PASS",
+      "detail": "hits=0"
+    }
+  ],
+  "firstCohort": 35,
+  "recurringCostDelta": 0
+}
