@@ -1,0 +1,60 @@
+{
+  "packet": "CIBT-NATIONAL-TRANSFER-002-PRODUCT-BRIDGE",
+  "source_repository": "JonathanEdwardLee/caniborrowthis-research",
+  "accepted_transfer_head": "77b5ae9c8455557346936b313a73d2af12faa216",
+  "source_path": "outputs/product_transfer/national_002/national_zip_routes.csv",
+  "source_git_blob_sha": "62d5b26df6289cd53088eff5c055deb0a41965e7",
+  "source_sha256": "0ed4e3389a6938a28a8d0b963589488d53884327f207a34e52405bdea466b5f7",
+  "source_bytes": 5048599,
+  "source_rows": 37865,
+  "packaging_reason": "Connector write transport could not reliably submit the 5.05 MB file as one GitHub contents mutation. Primary split only at existing newline boundaries; ordered concatenation must reproduce the accepted source byte-for-byte before implementation.",
+  "reconstruction": "Concatenate parts in lexical filename order with no inserted or removed bytes, then verify SHA-256 and byte count before use.",
+  "verified_prewrite_reconstruction": true,
+  "part_count": 11,
+  "parts": [
+    {
+      "name": "national_zip_routes.part-001.csv",
+      "bytes": 499922
+    },
+    {
+      "name": "national_zip_routes.part-002.csv",
+      "bytes": 499924
+    },
+    {
+      "name": "national_zip_routes.part-003.csv",
+      "bytes": 499961
+    },
+    {
+      "name": "national_zip_routes.part-004.csv",
+      "bytes": 499954
+    },
+    {
+      "name": "national_zip_routes.part-005.csv",
+      "bytes": 499984
+    },
+    {
+      "name": "national_zip_routes.part-006.csv",
+      "bytes": 499968
+    },
+    {
+      "name": "national_zip_routes.part-007.csv",
+      "bytes": 499979
+    },
+    {
+      "name": "national_zip_routes.part-008.csv",
+      "bytes": 499888
+    },
+    {
+      "name": "national_zip_routes.part-009.csv",
+      "bytes": 499914
+    },
+    {
+      "name": "national_zip_routes.part-010.csv",
+      "bytes": 499974
+    },
+    {
+      "name": "national_zip_routes.part-011.csv",
+      "bytes": 49131
+    }
+  ]
+}
