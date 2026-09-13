@@ -1,6 +1,10 @@
-import { getAllSources, RESULT_CLASS, PILOT_ZIPS } from './data.js?v=pass011';
-import { normalizeObject } from './normalize.js?v=pass011';
-import { OZARKS_CITIES } from './ozarks-generated.js?v=pass011';
+import { getAllSources, RESULT_CLASS, PILOT_ZIPS } from './data.js?v=pass012';
+import { normalizeObject } from './normalize.js?v=pass012';
+import { OZARKS_CITIES } from './ozarks-generated.js?v=pass012';
+import {
+  buildImlsSearchCompareSource,
+  resolveNationalGeoTarget,
+} from './national-routing.js?v=pass012';
 
 const MILES_PER_KM = 0.621371;
 /** Show geo coverage context when user is farther than this from the centroid (straight-line). */
@@ -24,17 +28,17 @@ export function formatApproxDistance(miles) {
 
 /**
  * @param {string} zip
- * @returns {{ status: 'VALID', zip: string } | { status: 'INVALID' } | { status: 'UNSUPPORTED' }}
+ * @returns {{ status: 'VALID', zip: string } | { status: 'WELL_FORMED', zip: string } | { status: 'INVALID' }}
  */
 export function validateZip(zip) {
   const trimmed = (zip || '').trim();
   if (!/^\d{5}$/.test(trimmed)) {
     return { status: 'INVALID' };
   }
-  if (!PILOT_ZIPS[trimmed]) {
-    return { status: 'UNSUPPORTED' };
+  if (PILOT_ZIPS[trimmed]) {
+    return { status: 'VALID', zip: trimmed };
   }
-  return { status: 'VALID', zip: trimmed };
+  return { status: 'WELL_FORMED', zip: trimmed };
 }
 
 function isEligibleGeoDestination(zip) {
@@ -187,11 +191,14 @@ export function nearestEligibleCoverageZip(lat, lon) {
 
 /**
  * Object-aware GEO routing: normalize/classify object before choosing destination.
- * @returns {{ kind: 'zip', zip: string, distanceMi: number, label: string, objectNorm: object }
- *         | { kind: 'national', objectClass: string, objectNorm: object }
- *         | { kind: 'no_zip', objectNorm: object }}
+ * @returns {Promise<
+ *   { kind: 'zip', zip: string, distanceMi: number, label: string, objectNorm: object, cityKey?: string | null }
+ *   | { kind: 'national', objectClass: string, objectNorm: object }
+ *   | { kind: 'national_outlet', zip: string, distanceMi: number, label: string, objectNorm: object, nationalRoute: object }
+ *   | { kind: 'no_zip', objectNorm: object }
+ * >}
  */
-export function resolveGeoSearchTarget(lat, lon, objectText) {
+export async function resolveGeoSearchTarget(lat, lon, objectText) {
   const objectNorm = normalizeObject(objectText);
 
   if (objectNorm.status === 'SUPPORTED') {
@@ -206,12 +213,34 @@ export function resolveGeoSearchTarget(lat, lon, objectText) {
     if (nearFallback) {
       return { kind: 'zip', ...nearFallback, objectNorm };
     }
+    const nationalTarget = await resolveNationalGeoTarget(lat, lon);
+    if (nationalTarget.kind === 'national_outlet') {
+      return {
+        kind: 'national_outlet',
+        zip: nationalTarget.zip,
+        distanceMi: nationalTarget.distanceMi,
+        label: nationalTarget.label,
+        nationalRoute: nationalTarget.route,
+        objectNorm,
+      };
+    }
     return { kind: 'no_zip', objectNorm };
   }
 
   const nearFallback = findNearestFallbackWithinThreshold(lat, lon);
   if (nearFallback) {
     return { kind: 'zip', ...nearFallback, objectNorm };
+  }
+  const nationalTarget = await resolveNationalGeoTarget(lat, lon);
+  if (nationalTarget.kind === 'national_outlet') {
+    return {
+      kind: 'national_outlet',
+      zip: nationalTarget.zip,
+      distanceMi: nationalTarget.distanceMi,
+      label: nationalTarget.label,
+      nationalRoute: nationalTarget.route,
+      objectNorm,
+    };
   }
   return { kind: 'no_zip', objectNorm };
 }
@@ -227,4 +256,4 @@ export function getZipCentroid(zip) {
   return { lat: info.lat, lon: info.lon, label: info.label };
 }
 
-export { isEligibleGeoDestination };
+export { isEligibleGeoDestination, buildImlsSearchCompareSource };

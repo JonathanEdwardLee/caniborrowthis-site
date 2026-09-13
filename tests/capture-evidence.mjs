@@ -34,7 +34,7 @@ await page.selectOption('#object-input', 'garden tool');
 await page.fill('#zip-input', '65681');
 await page.click('button[type="submit"]');
 await page.waitForSelector('.result-card');
-await page.screenshot({ path: join(evidenceDir, 'pass011-capture-lampe-fallback.png'), fullPage: true });
+await page.screenshot({ path: join(evidenceDir, 'pass012-capture-lampe-fallback.png'), fullPage: true });
 
 await browser.close();
 await ctx.close();

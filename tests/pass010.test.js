@@ -44,7 +44,7 @@ describe('P10-01 guided object selector', () => {
     assert.equal(DEFAULT_OBJECT_VALUE, 'telescope');
   });
 
-  it('lists only reviewed supported object families with canonical values', () => {
+  it('lists only reviewed supported object families with canonical values', async () => {
     const reviewed = reviewedObjectClasses();
     assert.equal(OBJECT_OPTIONS.length, reviewed.size);
     for (const opt of OBJECT_OPTIONS) {
@@ -55,7 +55,7 @@ describe('P10-01 guided object selector', () => {
     }
   });
 
-  it('search works with default telescope without typing', () => {
+  it('search works with default telescope without typing', async () => {
     const out = search({ objectText: DEFAULT_OBJECT_VALUE, zip: '01103', locationMode: 'ZIP' });
     assert.equal(out.status, 'ok');
     assert.equal(out.objectClass, 'TELESCOPE');
@@ -92,8 +92,8 @@ describe('P10-02 evergreen explainer placement and content', () => {
 });
 
 describe('P10-03 Pass-008/009 routing and GEO ZIP trust regressions', () => {
-  it('Springfield GEO pressure washer routes to S7', () => {
-    const target = resolveGeoSearchTarget(
+  it('Springfield GEO pressure washer routes to S7', async () => {
+    const target = await resolveGeoSearchTarget(
       SPRINGFIELD_COORDS.lat,
       SPRINGFIELD_COORDS.lon,
       'pressure washer',
@@ -109,8 +109,8 @@ describe('P10-03 Pass-008/009 routing and GEO ZIP trust regressions', () => {
     assert.equal(out.results[0].sourceId, 'S7_SPRINGFIELD_TOOL_LIBRARY');
   });
 
-  it('Mountain Home GEO telescope routes to S9', () => {
-    const target = resolveGeoSearchTarget(
+  it('Mountain Home GEO telescope routes to S9', async () => {
+    const target = await resolveGeoSearchTarget(
       MOUNTAIN_HOME_COORDS.lat,
       MOUNTAIN_HOME_COORDS.lon,
       'telescope',
@@ -157,7 +157,7 @@ describe('P10-04 Pass-009 analytics and disclosure preservation', () => {
     assert.match(html, /<p class="analytics-disclosure">/);
   });
 
-  it('search_submitted still uses object_class only', () => {
+  it('search_submitted still uses object_class only', async () => {
     const calls = [];
     const gtag = (...args) => calls.push(args);
     bridgeEventToGa4(
@@ -179,7 +179,7 @@ describe('P10-04 Pass-009 analytics and disclosure preservation', () => {
     }
   });
 
-  it('measure hooks do not add new analytics events', () => {
+  it('measure hooks do not add new analytics events', async () => {
     const originalGtag = globalThis.gtag;
     const calls = [];
     globalThis.gtag = (...args) => calls.push(args);
@@ -197,31 +197,31 @@ describe('P10-04 Pass-009 analytics and disclosure preservation', () => {
   });
 });
 
-describe('P10-05 pass011 release identity and dependency state', () => {
-  it('index.html and runtime imports use pass011', async () => {
+describe('P10-05 pass012 release identity and dependency state', () => {
+  it('index.html and runtime imports use pass012', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /cibt-release" content="pass011"/);
-    assert.match(html, /styles\.css\?v=pass011/);
-    assert.match(html, /app\.js\?v=pass011/);
+    assert.match(html, /cibt-release" content="pass012"/);
+    assert.match(html, /styles\.css\?v=pass012/);
+    assert.match(html, /app\.js\?v=pass012/);
   });
 
-  it('every relative runtime .js import uses pass011 version query', async () => {
+  it('every relative runtime .js import uses pass012 version query', async () => {
     const importPattern = /from\s+['"](\.\/[^'"]+\.js(?:\?[^'"]*)?)['"]/g;
     for (const name of (await readdir(JS_DIR)).filter((entry) => entry.endsWith('.js'))) {
       const relPath = join('js', name);
       const content = await readFile(join(root, relPath), 'utf8');
       for (const [, specifier] of content.matchAll(importPattern)) {
-        assert.match(specifier, /\.js\?v=pass011$/, `${relPath} import "${specifier}"`);
+        assert.match(specifier, /\.js\?v=pass012$/, `${relPath} import "${specifier}"`);
       }
     }
   });
 
-  it('release.js exports pass011 identity', () => {
-    assert.equal(CIBT_RELEASE.pass, 'pass011');
-    assert.equal(CIBT_RELEASE.version, 'pass011');
+  it('release.js exports pass012 identity', async () => {
+    assert.equal(CIBT_RELEASE.pass, 'pass012');
+    assert.equal(CIBT_RELEASE.version, 'pass012');
   });
 
-  it('Playwright remains exact 1.62.1', () => {
+  it('Playwright remains exact 1.62.1', async () => {
     assert.equal(packageJson.devDependencies.playwright, '1.62.1');
   });
 });

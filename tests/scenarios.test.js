@@ -35,8 +35,8 @@ describe('validateZip', () => {
     assert.equal(validateZip('12A45').status, 'INVALID');
   });
 
-  it('rejects unsupported pilot ZIP', () => {
-    assert.equal(validateZip('10001').status, 'UNSUPPORTED');
+  it('rejects well-formed ZIP outside pilot coverage as WELL_FORMED', () => {
+    assert.equal(validateZip('10001').status, 'WELL_FORMED');
   });
 
   it('accepts frozen pilot ZIP', () => {
@@ -106,11 +106,17 @@ describe('SC-06 pressure washer + 12A45', () => {
 });
 
 describe('SC-07 any object + 10001', () => {
-  it('unsupported pilot ZIP message; no guessed location', () => {
-    const out = search({ objectText: 'sewing machine', zip: '10001' });
-    assert.equal(out.status, 'error');
-    assert.equal(out.message, MESSAGES.unsupportedZip);
-    assert.equal(out.results.length, 0);
+  it('observed national ZIP routes to authoritative fallback', async () => {
+    const { searchWithNational } = await import('./helpers/national.mjs');
+    const { search } = await import('../js/search.js');
+    const out = await searchWithNational(search, {
+      objectText: 'sewing machine',
+      zip: '10001',
+      locationMode: 'ZIP',
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.some((r) => r.class === 'NEARBY_LIBRARY_TO_ASK'));
+    assert.ok(out.results.some((r) => /official page to ask\/check/i.test(r.title)));
   });
 });
 

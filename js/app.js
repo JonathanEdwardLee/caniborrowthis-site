@@ -1,12 +1,17 @@
-import { search, MESSAGES } from './search.js?v=pass011';
-import { resolveGeoSearchTarget, formatGeoCoverageContext } from './geo.js?v=pass011';
-import { normalizeObject } from './normalize.js?v=pass011';
+import { search, MESSAGES } from './search.js?v=pass012';
+import { resolveGeoSearchTarget, formatGeoCoverageContext } from './geo.js?v=pass012';
+import { normalizeObject } from './normalize.js?v=pass012';
+import { PILOT_ZIPS } from './data.js?v=pass012';
+import {
+  resolveNationalZipContext,
+  buildNationalFallbackSource,
+} from './national-routing.js?v=pass012';
 import {
   measureOutboundClicked,
   measureLocationPermissionResult,
-} from './measure.js?v=pass011';
-import { CIBT_RELEASE } from './release.js?v=pass011';
-import { OBJECT_OPTIONS, DEFAULT_OBJECT_VALUE } from './object-options.js?v=pass011';
+} from './measure.js?v=pass012';
+import { CIBT_RELEASE } from './release.js?v=pass012';
+import { OBJECT_OPTIONS, DEFAULT_OBJECT_VALUE } from './object-options.js?v=pass012';
 
 const releaseMarker = document.getElementById('cibt-release-marker');
 if (releaseMarker) {
@@ -27,6 +32,7 @@ let pendingGeoContext = null;
 let lastGeoDistanceMi = null;
 let lastGeoCityKey = null;
 let geoTargetKind = undefined;
+let pendingNationalRoute = null;
 
 function populateObjectSelect() {
   for (const opt of OBJECT_OPTIONS) {
@@ -114,9 +120,38 @@ function renderResults(results) {
   }
 }
 
-function runSearch() {
+async function resolveNationalContext(zip) {
+  if (!/^\d{5}$/.test(zip) || PILOT_ZIPS[zip]) {
+    return { nationalZipContext: null, nationalRoute: null };
+  }
+
+  const nationalZipContext = await resolveNationalZipContext(zip);
+  if (nationalZipContext.kind === 'observed') {
+    nationalZipContext.source = await buildNationalFallbackSource(nationalZipContext.route);
+  }
+  return {
+    nationalZipContext,
+    nationalRoute: nationalZipContext.route || null,
+  };
+}
+
+async function runSearch() {
   clearUI();
   const zip = activeZip || zipInput.value.trim();
+  let nationalZipContext = null;
+  let nationalRoute = pendingNationalRoute;
+
+  if (locationMode === 'GEO' && geoTargetKind === 'national_outlet' && nationalRoute) {
+    nationalZipContext = {
+      kind: 'observed',
+      zip,
+      route: nationalRoute,
+      source: await buildNationalFallbackSource(nationalRoute),
+    };
+  } else if (locationMode === 'ZIP') {
+    ({ nationalZipContext, nationalRoute } = await resolveNationalContext(zip));
+  }
+
   const outcome = search({
     objectText: objectInput.value,
     zip,
@@ -124,7 +159,11 @@ function runSearch() {
     geoDistanceMi: locationMode === 'GEO' ? lastGeoDistanceMi : undefined,
     geoTargetKind: locationMode === 'GEO' ? geoTargetKind : undefined,
     cityKey: locationMode === 'GEO' ? lastGeoCityKey : undefined,
+    nationalZipContext,
+    nationalRoute,
   });
+
+  pendingNationalRoute = null;
 
   if (pendingGeoContext) {
     showStatus(pendingGeoContext, 'info');
@@ -154,7 +193,11 @@ form.addEventListener('submit', (e) => {
   lastGeoDistanceMi = null;
   lastGeoCityKey = null;
   geoTargetKind = undefined;
-  runSearch();
+  pendingNationalRoute = null;
+  runSearch().catch((err) => {
+    console.error(err);
+    showStatus('Something went wrong loading location data. Please try again.', 'error');
+  });
 });
 
 locateBtn.addEventListener('click', () => {
@@ -168,36 +211,51 @@ locateBtn.addEventListener('click', () => {
   locateBtn.setAttribute('aria-busy', 'true');
 
   navigator.geolocation.getCurrentPosition(
-    (pos) => {
+    async (pos) => {
       measureLocationPermissionResult({ result: 'GRANTED' });
       const { latitude, longitude } = pos.coords;
       normalizeObject(objectInput.value);
-      const target = resolveGeoSearchTarget(latitude, longitude, objectInput.value);
-      locateBtn.disabled = false;
-      locateBtn.removeAttribute('aria-busy');
+      try {
+        const target = await resolveGeoSearchTarget(latitude, longitude, objectInput.value);
+        locateBtn.disabled = false;
+        locateBtn.removeAttribute('aria-busy');
 
-      locationMode = 'GEO';
-      geoTargetKind = undefined;
-      pendingGeoContext = null;
-      lastGeoDistanceMi = null;
-      lastGeoCityKey = null;
-      activeZip = '';
+        locationMode = 'GEO';
+        geoTargetKind = undefined;
+        pendingGeoContext = null;
+        lastGeoDistanceMi = null;
+        lastGeoCityKey = null;
+        activeZip = '';
+        pendingNationalRoute = null;
 
-      if (target.kind === 'zip') {
-        activeZip = target.zip;
-        lastGeoCityKey = target.cityKey || null;
-        lastGeoDistanceMi = target.distanceMi;
-        zipInput.value = '';
-        pendingGeoContext = formatGeoCoverageContext(target.label, target.distanceMi);
-      } else if (target.kind === 'national') {
-        zipInput.value = '';
-        geoTargetKind = 'national';
-      } else {
-        zipInput.value = '';
-        geoTargetKind = 'no_zip';
+        if (target.kind === 'zip') {
+          activeZip = target.zip;
+          lastGeoCityKey = target.cityKey || null;
+          lastGeoDistanceMi = target.distanceMi;
+          zipInput.value = '';
+          pendingGeoContext = formatGeoCoverageContext(target.label, target.distanceMi);
+        } else if (target.kind === 'national') {
+          zipInput.value = '';
+          geoTargetKind = 'national';
+        } else if (target.kind === 'national_outlet') {
+          activeZip = target.zip;
+          lastGeoDistanceMi = target.distanceMi;
+          zipInput.value = '';
+          geoTargetKind = 'national_outlet';
+          pendingNationalRoute = target.nationalRoute;
+          pendingGeoContext = formatGeoCoverageContext(target.label, target.distanceMi);
+        } else {
+          zipInput.value = '';
+          geoTargetKind = 'no_zip';
+        }
+
+        await runSearch();
+      } catch (err) {
+        console.error(err);
+        locateBtn.disabled = false;
+        locateBtn.removeAttribute('aria-busy');
+        showStatus('Something went wrong loading location data. Please try again.', 'error');
       }
-
-      runSearch();
     },
     (err) => {
       const result = err.code === err.PERMISSION_DENIED ? 'DENIED' : 'ERROR';

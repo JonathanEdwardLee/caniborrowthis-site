@@ -1,4 +1,4 @@
-import { OZARKS_SOURCES, OZARKS_ZIP_CENTROIDS } from './ozarks-generated.js?v=pass011';
+import { OZARKS_SOURCES, OZARKS_ZIP_CENTROIDS } from './ozarks-generated.js?v=pass012';
 
 /** Frozen Pass-010 Springfield centroid — Ozarks transfer points do not replace this. */
 const SPRINGFIELD_MO_CENTROID = { label: 'Springfield, MO', lat: 37.208957, lon: -93.292298 };

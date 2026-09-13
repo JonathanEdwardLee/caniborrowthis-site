@@ -29,14 +29,14 @@ describe('P6-01 object classification precedes GEO destination', () => {
     assert.doesNotMatch(appJs, /nearestEligibleCoverageZip/);
   });
 
-  it('resolveGeoSearchTarget normalizes object before choosing destination', () => {
+  it('resolveGeoSearchTarget normalizes object before choosing destination', async () => {
     const naive = nearestEligibleCoverageZip(
       FORT_PAYNE_NEAREST_COORDS.lat,
       FORT_PAYNE_NEAREST_COORDS.lon,
     );
     assert.equal(naive.zip, '35967');
 
-    const aware = resolveGeoSearchTarget(
+    const aware = await resolveGeoSearchTarget(
       FORT_PAYNE_NEAREST_COORDS.lat,
       FORT_PAYNE_NEAREST_COORDS.lon,
       'sewing machine',
@@ -48,8 +48,8 @@ describe('P6-01 object classification precedes GEO destination', () => {
 });
 
 describe('P6-02 sewing machine avoids fallback-only Fort Payne centroid', () => {
-  it('selects nearest reviewed geography-bound sewing path, not 35967', () => {
-    const target = resolveGeoSearchTarget(
+  it('selects nearest reviewed geography-bound sewing path, not 35967', async () => {
+    const target = await resolveGeoSearchTarget(
       FORT_PAYNE_NEAREST_COORDS.lat,
       FORT_PAYNE_NEAREST_COORDS.lon,
       'sewing machine',
@@ -71,8 +71,8 @@ describe('P6-02 sewing machine avoids fallback-only Fort Payne centroid', () => 
 });
 
 describe('P6-03 OBD-II scanner object-aware GEO', () => {
-  it('selects nearest reviewed geography-bound OBD path, not 35967', () => {
-    const target = resolveGeoSearchTarget(
+  it('selects nearest reviewed geography-bound OBD path, not 35967', async () => {
+    const target = await resolveGeoSearchTarget(
       FORT_PAYNE_NEAREST_COORDS.lat,
       FORT_PAYNE_NEAREST_COORDS.lon,
       'OBD-II scanner',
@@ -94,8 +94,8 @@ describe('P6-03 OBD-II scanner object-aware GEO', () => {
 });
 
 describe('P6-04 binoculars national-only GEO path', () => {
-  it('returns national specialist resource without unrelated ZIP autofill', () => {
-    const target = resolveGeoSearchTarget(
+  it('returns national specialist resource without unrelated ZIP autofill', async () => {
+    const target = await resolveGeoSearchTarget(
       FORT_PAYNE_NEAREST_COORDS.lat,
       FORT_PAYNE_NEAREST_COORDS.lon,
       'binoculars',
@@ -117,49 +117,70 @@ describe('P6-04 binoculars national-only GEO path', () => {
 });
 
 describe('P6-05 unsupported/unrecognized distant GEO', () => {
-  it('does not autofill remote fallback ZIP for chainsaw', () => {
-    const target = resolveGeoSearchTarget(
+  it('uses national nearest outlet without exposing a detected ZIP in the search contract', async () => {
+    const target = await resolveGeoSearchTarget(
       FORT_PAYNE_NEAREST_COORDS.lat,
       FORT_PAYNE_NEAREST_COORDS.lon,
       'chainsaw',
     );
-    assert.equal(target.kind, 'no_zip');
+    assert.equal(target.kind, 'national_outlet');
+    assert.ok(target.zip);
+    assert.ok(target.nationalRoute);
 
+    const { buildNationalFallbackSource } = await import('../js/national-routing.js');
+    const source = await buildNationalFallbackSource(target.nationalRoute);
     const out = search({
       objectText: 'chainsaw',
-      zip: '',
+      zip: target.zip,
       locationMode: 'GEO',
-      geoTargetKind: 'no_zip',
+      geoTargetKind: 'national_outlet',
+      geoDistanceMi: target.distanceMi,
+      nationalZipContext: {
+        kind: 'observed',
+        zip: target.zip,
+        route: target.nationalRoute,
+        source,
+      },
+      nationalRoute: target.nationalRoute,
     });
     assert.equal(out.status, 'ok');
-    assert.equal(out.results.length, 0);
-    assert.ok(!out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
+    assert.ok(out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
     assert.ok(out.disclaimers.some((d) => d === MESSAGES.unsupportedObject));
   });
 
-  it('does not autofill remote fallback ZIP for unrecognized object', () => {
-    const target = resolveGeoSearchTarget(
+  it('uses national nearest outlet for unrecognized object without dead end', async () => {
+    const target = await resolveGeoSearchTarget(
       FORT_PAYNE_NEAREST_COORDS.lat,
       FORT_PAYNE_NEAREST_COORDS.lon,
       'widget',
     );
-    assert.equal(target.kind, 'no_zip');
+    assert.equal(target.kind, 'national_outlet');
 
+    const { buildNationalFallbackSource } = await import('../js/national-routing.js');
+    const source = await buildNationalFallbackSource(target.nationalRoute);
     const out = search({
       objectText: 'widget',
-      zip: '',
+      zip: target.zip,
       locationMode: 'GEO',
-      geoTargetKind: 'no_zip',
+      geoTargetKind: 'national_outlet',
+      geoDistanceMi: target.distanceMi,
+      nationalZipContext: {
+        kind: 'observed',
+        zip: target.zip,
+        route: target.nationalRoute,
+        source,
+      },
+      nationalRoute: target.nationalRoute,
     });
     assert.equal(out.status, 'ok');
-    assert.equal(out.results.length, 0);
+    assert.ok(out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
     assert.ok(out.disclaimers.some((d) => d === MESSAGES.unrecognizedObject));
   });
 });
 
 describe('P6-06 near fallback centroid retains generic fallback', () => {
-  it('shows generic fallback when user is within threshold of fallback centroid', () => {
-    const target = resolveGeoSearchTarget(
+  it('shows generic fallback when user is within threshold of fallback centroid', async () => {
+    const target = await resolveGeoSearchTarget(
       FORT_PAYNE_CENTROID.lat,
       FORT_PAYNE_CENTROID.lon,
       'chainsaw',
@@ -181,13 +202,13 @@ describe('P6-06 near fallback centroid retains generic fallback', () => {
 });
 
 describe('P6-07 manual ZIP regressions unchanged', () => {
-  it('SC-01 sewing machine + 16693 still ranks relevant program first', () => {
+  it('SC-01 sewing machine + 16693 still ranks relevant program first', async () => {
     const out = search({ objectText: 'sewing machine', zip: '16693', locationMode: 'ZIP' });
     assert.equal(out.results[0].sourceId, 'S1_ALTOONA_TOOL');
     assert.equal(out.results[0].distanceLabel, 'Approx. 10.7 mi');
   });
 
-  it('90210 manual ZIP still has no invented fallback', () => {
+  it('90210 manual ZIP still has no invented fallback', async () => {
     const out = search({ objectText: 'pressure washer', zip: '90210', locationMode: 'ZIP' });
     assert.equal(out.results.length, 0);
     assert.equal(out.message, MESSAGES.noNearbyEvidence);
@@ -195,7 +216,7 @@ describe('P6-07 manual ZIP regressions unchanged', () => {
 });
 
 describe('P6-08 ranking privacy accessibility regressions', () => {
-  it('relevant program still ranks before fallback on manual ZIP', () => {
+  it('relevant program still ranks before fallback on manual ZIP', async () => {
     const out = search({ objectText: 'sewing machine', zip: '16693' });
     assert.equal(out.results[0].class, RESULT_CLASS.RELEVANT);
     assert.ok(out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
@@ -226,8 +247,8 @@ describe('P6-08 ranking privacy accessibility regressions', () => {
 });
 
 describe('P6-10 object-aware distant GEO context copy', () => {
-  it('uses truthful search-specific wording for Huntsville sewing machine', () => {
-    const target = resolveGeoSearchTarget(
+  it('uses truthful search-specific wording for Huntsville sewing machine', async () => {
+    const target = await resolveGeoSearchTarget(
       FORT_PAYNE_NEAREST_COORDS.lat,
       FORT_PAYNE_NEAREST_COORDS.lon,
       'sewing machine',
@@ -239,14 +260,14 @@ describe('P6-10 object-aware distant GEO context copy', () => {
   });
 });
 
-describe('P6-09 pass011 release identity and versioned assets', () => {
-  it('index.html requests pass011-versioned CSS and entry JS', async () => {
+describe('P6-09 pass012 release identity and versioned assets', () => {
+  it('index.html requests pass012-versioned CSS and entry JS', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /href="css\/styles\.css\?v=pass011"/);
-    assert.match(html, /src="js\/app\.js\?v=pass011"/);
+    assert.match(html, /href="css\/styles\.css\?v=pass012"/);
+    assert.match(html, /src="js\/app\.js\?v=pass012"/);
   });
 
-  it('every relative runtime .js import uses pass011 version query', async () => {
+  it('every relative runtime .js import uses pass012 version query', async () => {
     const importPattern = /from\s+['"](\.\/[^'"]+\.js(?:\?[^'"]*)?)['"]/g;
     const jsEntries = await readdir(JS_DIR);
 
@@ -256,22 +277,22 @@ describe('P6-09 pass011 release identity and versioned assets', () => {
       for (const [, specifier] of content.matchAll(importPattern)) {
         assert.match(
           specifier,
-          /\.js\?v=pass011$/,
-          `${relPath} import "${specifier}" must use ?v=pass011`,
+          /\.js\?v=pass012$/,
+          `${relPath} import "${specifier}" must use ?v=pass012`,
         );
       }
     }
   });
 
-  it('index.html exposes pass011 release meta and hidden DOM marker', async () => {
+  it('index.html exposes pass012 release meta and hidden DOM marker', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /<meta name="cibt-release" content="pass011">/);
-    assert.match(html, /id="cibt-release-marker"[^>]*data-release="pass011"/);
+    assert.match(html, /<meta name="cibt-release" content="pass012">/);
+    assert.match(html, /id="cibt-release-marker"[^>]*data-release="pass012"/);
   });
 
-  it('release.js exports pass011 identity without commit stamp', () => {
-    assert.equal(CIBT_RELEASE.pass, 'pass011');
-    assert.equal(CIBT_RELEASE.version, 'pass011');
+  it('release.js exports pass012 identity without commit stamp', async () => {
+    assert.equal(CIBT_RELEASE.pass, 'pass012');
+    assert.equal(CIBT_RELEASE.version, 'pass012');
     assert.equal(CIBT_RELEASE.commit, undefined);
   });
 });

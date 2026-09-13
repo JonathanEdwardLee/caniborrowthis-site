@@ -89,11 +89,16 @@ describe('P4-06 ZIP fail-closed public copy', () => {
     assert.equal(out.message, MESSAGES.invalidZip);
   });
 
-  it('unsupported ZIP uses public copy without pilot language', () => {
-    const out = search({ objectText: 'sewing machine', zip: '10001' });
-    assert.equal(out.status, 'error');
-    assert.equal(out.message, MESSAGES.unsupportedZip);
-    assert.match(out.message, /Use my location/);
+  it('unknown well-formed ZIP offers IMLS Search & Compare without pilot language', async () => {
+    const { searchWithNational } = await import('./helpers/national.mjs');
+    const out = await searchWithNational(search, {
+      objectText: 'sewing machine',
+      zip: '99999',
+      locationMode: 'ZIP',
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.some((r) => /IMLS Search & Compare/i.test(r.title)));
+    assert.ok(out.disclaimers.some((d) => /outside our accepted observed reference/i.test(d)));
   });
 });
 
