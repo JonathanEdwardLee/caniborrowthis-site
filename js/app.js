@@ -1,7 +1,6 @@
 import { search, MESSAGES } from './search.js?v=pass012';
 import { resolveGeoSearchTarget, formatGeoCoverageContext } from './geo.js?v=pass012';
 import { normalizeObject } from './normalize.js?v=pass012';
-import { PILOT_ZIPS } from './data.js?v=pass012';
 import {
   resolveNationalZipContext,
   buildNationalFallbackSource,
@@ -121,7 +120,7 @@ function renderResults(results) {
 }
 
 async function resolveNationalContext(zip) {
-  if (!/^\d{5}$/.test(zip) || PILOT_ZIPS[zip]) {
+  if (!/^\d{5}$/.test(zip)) {
     return { nationalZipContext: null, nationalRoute: null };
   }
 

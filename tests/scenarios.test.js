@@ -89,10 +89,17 @@ describe('SC-04 chainsaw + 16693', () => {
 });
 
 describe('SC-05 pressure washer + 90210', () => {
-  it('valid ZIP with honest no-nearby-evidence; no invented fallback', () => {
-    const out = search({ objectText: 'pressure washer', zip: '90210' });
-    assert.equal(out.message, MESSAGES.noNearbyEvidence);
-    assert.equal(out.results.length, 0);
+  it('routes former no-source pilot ZIP to honest national fallback', async () => {
+    const { searchWithNational } = await import('./helpers/national.mjs');
+    const out = await searchWithNational(search, {
+      objectText: 'pressure washer',
+      zip: '90210',
+      locationMode: 'ZIP',
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.length >= 1);
+    assert.ok(out.results.some((r) => /official page to ask\/check/i.test(r.title)));
+    assert.notEqual(out.message, MESSAGES.invalidZip);
   });
 });
 

@@ -127,6 +127,40 @@ function buildNationalResults(nationalZipContext, nationalRoute, zip, cityKey) {
   return { results, disclaimers };
 }
 
+function finalizeWithNationalFallback({
+  nationalZipContext,
+  nationalRoute,
+  zip,
+  cityKey,
+  objectClass,
+  disclaimers = [],
+  message = null,
+  prependNoRelevant = true,
+}) {
+  const national = buildNationalResults(nationalZipContext, nationalRoute, zip, cityKey);
+  if (national.results.length === 0) return null;
+
+  const finalDisclaimers = [...disclaimers, ...national.disclaimers];
+  if (prependNoRelevant && !finalDisclaimers.includes(MESSAGES.noRelevantSource)) {
+    finalDisclaimers.unshift(MESSAGES.noRelevantSource);
+  }
+
+  measureResultsRendered({
+    relevant: 0,
+    resource: 0,
+    fallback: national.results.length,
+    none: 0,
+  });
+
+  return {
+    status: 'ok',
+    message: message || MESSAGES.noRelevantSource,
+    results: national.results,
+    disclaimers: finalDisclaimers,
+    objectClass,
+  };
+}
+
 function buildResult(source, zip) {
   const result = {
     sourceId: source.id,
@@ -381,6 +415,19 @@ export function search({
       message = MESSAGES.noNearbyEvidence;
     }
 
+    if (results.length === 0) {
+      const nationalOutcome = finalizeWithNationalFallback({
+        nationalZipContext,
+        nationalRoute,
+        zip: pilotZip,
+        cityKey,
+        objectClass: null,
+        disclaimers,
+        prependNoRelevant: false,
+      });
+      if (nationalOutcome) return nationalOutcome;
+    }
+
     measureResultsRendered({
       relevant: 0,
       resource: 0,
@@ -416,13 +463,16 @@ export function search({
     }
 
     if (zipInfo.noApprovedSource) {
-      return {
-        status: 'ok',
-        message: MESSAGES.noNearbyEvidence,
-        results: [],
-        disclaimers: [MESSAGES.unrecognizedObject],
+      const nationalOutcome = finalizeWithNationalFallback({
+        nationalZipContext,
+        nationalRoute,
+        zip: pilotZip,
+        cityKey,
         objectClass: null,
-      };
+        disclaimers: [MESSAGES.unrecognizedObject],
+        prependNoRelevant: false,
+      });
+      if (nationalOutcome) return nationalOutcome;
     }
 
     if (fallbacks.length === 0 && !hasRelevantOrResource) {
@@ -472,17 +522,6 @@ export function search({
     coverageState: 'SUPPORTED',
   });
 
-  if (zipInfo.noApprovedSource) {
-    measureResultsRendered({ relevant: 0, resource: 0, fallback: 0, none: 1 });
-    return {
-      status: 'ok',
-      message: MESSAGES.noNearbyEvidence,
-      results: [],
-      disclaimers: [],
-      objectClass,
-    };
-  }
-
   const relevant = getAllSources()
     .filter(
       (s) =>
@@ -513,27 +552,15 @@ export function search({
   }
 
   if (!hasRelevantOrResource && fallbacks.length === 0) {
-    const national = buildNationalResults(
+    const nationalOutcome = finalizeWithNationalFallback({
       nationalZipContext,
       nationalRoute,
-      pilotZip,
+      zip: pilotZip,
       cityKey,
-    );
-    if (national.results.length > 0) {
-      measureResultsRendered({
-        relevant: 0,
-        resource: 0,
-        fallback: national.results.length,
-        none: 0,
-      });
-      return {
-        status: 'ok',
-        message: MESSAGES.noRelevantSource,
-        results: national.results,
-        disclaimers: [MESSAGES.noRelevantSource, ...national.disclaimers],
-        objectClass,
-      };
-    }
+      objectClass,
+      disclaimers: [],
+    });
+    if (nationalOutcome) return nationalOutcome;
 
     measureResultsRendered({ relevant: 0, resource: 0, fallback: 0, none: 1 });
     return {

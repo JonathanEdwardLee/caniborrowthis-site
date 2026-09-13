@@ -531,4 +531,113 @@ describe('P11 browser Ozarks coverage evidence', () => {
     });
     await browser.close();
   });
+
+  it('former noApprovedSource pilot ZIP 90210 renders national fallback in browser', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    await page.selectOption('#object-input', 'pressure washer');
+    await page.fill('#zip-input', '90210');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    const status = await page.locator('#status-message').textContent();
+    assert.doesNotMatch(status, /valid 5-digit ZIP/i);
+    const note = await page.locator('.result-note').first().textContent();
+    assert.doesNotMatch(note, /Census|ZCTA/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass012-90210-national-fallback.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+});
+
+describe('P12-09 lazy-load network evidence', () => {
+  function nationalJsonRequests(requests) {
+    return requests.filter((url) => /\/js\/national\/.*\.json(?:\?|$)/.test(url));
+  }
+
+  it('initial page load requests no national JSON assets', async () => {
+    const requests = [];
+    const browser = await chromium.launch();
+    const page = await browser.newPage();
+    page.on('request', (request) => requests.push(request.url()));
+    await page.goto(ctx.baseUrl);
+    await page.waitForSelector('#search-form');
+    const nationalJson = nationalJsonRequests(requests);
+    assert.equal(nationalJson.length, 0);
+    await browser.close();
+  });
+
+  it('manual national ZIP search loads only required prefix chunk and lookup assets', async () => {
+    const requests = [];
+    const responseBytes = [];
+    const browser = await chromium.launch();
+    const page = await browser.newPage();
+    page.on('request', (request) => requests.push(request.url()));
+    page.on('response', async (response) => {
+      if (response.url().includes('/js/national/') && response.url().endsWith('.json')) {
+        const body = await response.body();
+        responseBytes.push({ url: response.url(), bytes: body.length });
+      }
+    });
+    await page.goto(ctx.baseUrl);
+    await page.fill('#zip-input', '10002');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    await page.waitForTimeout(500);
+
+    const nationalJson = nationalJsonRequests(requests);
+    assert.ok(nationalJson.some((url) => url.includes('/js/national/routes/10.json')));
+    assert.ok(nationalJson.some((url) => url.includes('/js/national/destinations.json')));
+    assert.ok(nationalJson.some((url) => url.includes('/js/national/outlets.json')));
+    assert.ok(!nationalJson.some((url) => url.includes('/js/national/routes/00.json')));
+    assert.ok(!nationalJson.some((url) => url.includes('/js/national/routes/99.json')));
+
+    const transferredBytes = responseBytes.reduce((sum, entry) => sum + entry.bytes, 0);
+    assert.ok(transferredBytes > 0);
+    assert.ok(transferredBytes < 6_000_000);
+
+    await browser.close();
+  });
+
+  it('GEO loads outlet lookup assets only when GEO is used', async () => {
+    const requests = [];
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    page.on('request', (request) => requests.push(request.url()));
+
+    await page.addInitScript(() => {
+      navigator.geolocation.getCurrentPosition = (success) => {
+        success({ coords: { latitude: 40.7589, longitude: -73.9851 } });
+      };
+    });
+
+    await page.goto(ctx.baseUrl);
+    await page.waitForSelector('#search-form');
+    assert.equal(nationalJsonRequests(requests).length, 0);
+
+    await page.evaluate(() => {
+      const select = document.getElementById('object-input');
+      const option = document.createElement('option');
+      option.value = 'chainsaw';
+      option.textContent = 'chainsaw';
+      select.appendChild(option);
+      select.value = 'chainsaw';
+    });
+    await page.click('#locate-btn');
+    await page.waitForSelector('.result-card');
+    await page.waitForTimeout(500);
+
+    const nationalJson = nationalJsonRequests(requests);
+    assert.ok(nationalJson.some((url) => url.includes('/js/national/outlets.json')));
+    assert.ok(nationalJson.some((url) => url.includes('/js/national/destinations.json')));
+    assert.ok(!nationalJson.some((url) => url.includes('/js/national/routes/')));
+    const note = await page.locator('.result-note').first().textContent();
+    assert.match(note, /permissioned location/i);
+    assert.doesNotMatch(note, /Census|ZCTA/i);
+
+    await browser.close();
+  });
 });

@@ -2,6 +2,7 @@ import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,7 @@ import {
   lookupZipRoute,
   buildNationalFallbackSource,
   findNearestNationalOutlet,
+  resolveNationalGeoTarget,
 } from '../js/national-routing.js';
 import {
   ROUTE_CLASS_COUNTS,
@@ -180,6 +182,10 @@ describe('P12-05 GEO national outlet layer', () => {
     const target = await resolveGeoSearchTarget(40.7589, -73.9851, 'chainsaw');
     assert.equal(target.kind, 'national_outlet');
     assert.ok(target.zip);
+    assert.equal(target.nationalRoute.routeClass, 'GEO_NEAREST_ACTIVE_OUTLET');
+    const source = await buildNationalFallbackSource(target.nationalRoute);
+    assert.match(source.note, /permissioned location/i);
+    assert.doesNotMatch(source.note, /Census|ZCTA/i);
   });
 });
 
@@ -236,4 +242,25 @@ describe('P12-07 privacy and recurring cost', () => {
   });
 });
 
-import { readFileSync } from 'node:fs';
+describe('P12-08 Primary correction 001', () => {
+  it('C1: former noApprovedSource pilot ZIP 90210 gets national fallback', async () => {
+    const out = await searchWithNational(search, {
+      objectText: 'pressure washer',
+      zip: '90210',
+      locationMode: 'ZIP',
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.length >= 1);
+    assert.notEqual(out.message, MESSAGES.invalidZip);
+    assert.notEqual(out.message, MESSAGES.noNearbyEvidence);
+  });
+
+  it('C2: GEO nearest-outlet route uses permissioned-location semantics', async () => {
+    const target = await resolveNationalGeoTarget(40.7589, -73.9851);
+    assert.equal(target.kind, 'national_outlet');
+    assert.equal(target.route.routeClass, 'GEO_NEAREST_ACTIVE_OUTLET');
+    const source = await buildNationalFallbackSource(target.route);
+    assert.match(source.note, /permissioned location/i);
+    assert.doesNotMatch(source.note, /Census|ZCTA/i);
+  });
+});

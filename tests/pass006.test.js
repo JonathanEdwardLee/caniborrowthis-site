@@ -208,10 +208,16 @@ describe('P6-07 manual ZIP regressions unchanged', () => {
     assert.equal(out.results[0].distanceLabel, 'Approx. 10.7 mi');
   });
 
-  it('90210 manual ZIP still has no invented fallback', async () => {
-    const out = search({ objectText: 'pressure washer', zip: '90210', locationMode: 'ZIP' });
-    assert.equal(out.results.length, 0);
-    assert.equal(out.message, MESSAGES.noNearbyEvidence);
+  it('90210 manual ZIP routes to national fallback instead of dead-end', async () => {
+    const { searchWithNational } = await import('./helpers/national.mjs');
+    const out = await searchWithNational(search, {
+      objectText: 'pressure washer',
+      zip: '90210',
+      locationMode: 'ZIP',
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.length >= 1);
+    assert.equal(out.message, MESSAGES.noRelevantSource);
   });
 });
 

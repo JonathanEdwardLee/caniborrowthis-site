@@ -28,6 +28,8 @@ const NOTES = {
     'Active IMLS system/admin identity at this observed official ZIP identifier; not a physical nearby outlet; not current USPS validity or live inventory proof.',
   ZCTA_NEAREST_ACTIVE_OUTLET:
     'Straight-line nearest active IMLS outlet context from accepted Census ZCTA data; not eligibility, residency, service-area, or inventory proof.',
+  GEO_NEAREST_ACTIVE_OUTLET:
+    'Straight-line nearest active public-library outlet context from your permissioned location; not eligibility, residency, service-area, or inventory proof.',
   OBSERVED_REFERENCE_INDIRECT_ONLY:
     'Observed official reference with no safe exact or coordinate route; use IMLS Search & Compare. This is not a rejection.',
   UNKNOWN_ZIP:
@@ -183,6 +185,12 @@ export async function buildNationalFallbackSource(route) {
     };
   }
 
+  if (route.routeClass === 'GEO_NEAREST_ACTIVE_OUTLET' && route.distanceKm != null) {
+    source.acceptedDistanceMi = {
+      [route.zip]: route.distanceKm * KM_TO_MI,
+    };
+  }
+
   return source;
 }
 
@@ -223,7 +231,7 @@ export async function resolveNationalGeoTarget(lat, lon) {
   const { outlet, distanceKm } = nearest;
   const route = {
     zip: outlet.zip,
-    routeClass: 'ZCTA_NEAREST_ACTIVE_OUTLET',
+    routeClass: 'GEO_NEAREST_ACTIVE_OUTLET',
     fscskey: outlet.fscskey,
     fscsSeq: outlet.fscsSeq,
     distanceKm,

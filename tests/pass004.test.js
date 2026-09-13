@@ -114,10 +114,16 @@ describe('P4-07 regression: ranking and fail-closed behavior', () => {
     assert.ok(!out.results.some((r) => r.class === RESULT_CLASS.RELEVANT));
   });
 
-  it('90210 manual ZIP still has no invented fallback', () => {
-    const out = search({ objectText: 'pressure washer', zip: '90210' });
-    assert.equal(out.results.length, 0);
-    assert.equal(out.message, MESSAGES.noNearbyEvidence);
+  it('90210 manual ZIP routes to national fallback instead of dead-end', async () => {
+    const { searchWithNational } = await import('./helpers/national.mjs');
+    const out = await searchWithNational(search, {
+      objectText: 'pressure washer',
+      zip: '90210',
+      locationMode: 'ZIP',
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.length >= 1);
+    assert.equal(out.message, MESSAGES.noRelevantSource);
   });
 });
 
