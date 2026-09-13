@@ -1,14 +1,14 @@
-import { getAllSources, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass012';
-import { normalizeObject } from './normalize.js?v=pass012';
-import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass012';
+import { getAllSources, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass013';
+import { normalizeObject } from './normalize.js?v=pass013';
+import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass013';
 import {
   buildImlsSearchCompareSource,
   nationalSourceToResult,
-} from './national-routing.js?v=pass012';
+} from './national-routing.js?v=pass013';
 import {
   measureSearchSubmitted,
   measureResultsRendered,
-} from './measure.js?v=pass012';
+} from './measure.js?v=pass013';
 
 const CLASS_RANK = {
   [RESULT_CLASS.RELEVANT]: 1,
@@ -32,6 +32,8 @@ const MESSAGES = {
     'Location is unavailable. You can still search by entering a ZIP code.',
   noLocalReviewedMatch:
     "We don't have a reviewed local-area match for this object yet. The resource below may help you search more broadly.",
+  browseNearby:
+    'Nearby borrowing/resource places to explore. Check each source to see what it offers and current borrowing rules.',
 };
 
 function sourceMatchesObject(source, objectClass) {
@@ -47,6 +49,79 @@ function sourceMatchesGeography(source, zip, cityKey) {
   }
   if (!source.geographyZips) return false;
   return source.geographyZips.includes(zip);
+}
+
+function browseLocalResults(zip, cityKey) {
+  const results = getAllSources()
+    .filter((s) => {
+      if (s.national) return false;
+      if (s.class === RESULT_CLASS.RELEVANT || s.class === RESULT_CLASS.RESOURCE) {
+        return sourceMatchesGeography(s, zip, cityKey);
+      }
+      return fallbackMatchesGeography(s, zip, cityKey);
+    })
+    .map((s) => buildResult(s, zip));
+  results.sort((a, b) => (CLASS_RANK[a.class] || 99) - (CLASS_RANK[b.class] || 99));
+  return results;
+}
+
+function finishBrowse({
+  results,
+  disclaimers = [],
+  locationMode,
+  geoDistanceMi,
+  nationalZipContext,
+  nationalRoute,
+  zip,
+  cityKey,
+}) {
+  measureSearchSubmitted({
+    objectClass: 'BROWSE_ALL',
+    locationMode,
+    coverageState: 'BROWSE',
+  });
+  let list = results;
+  let notes = [...disclaimers];
+  ({ results: list, disclaimers: notes } = applyDistantGeoTrustPolicy(
+    list,
+    notes,
+    locationMode,
+    geoDistanceMi,
+  ));
+  if (list.length === 0) {
+    const nationalOutcome = finalizeWithNationalFallback({
+      nationalZipContext,
+      nationalRoute,
+      zip,
+      cityKey,
+      objectClass: 'BROWSE_ALL',
+      disclaimers: notes,
+      prependNoRelevant: false,
+      message: MESSAGES.browseNearby,
+    });
+    if (nationalOutcome) return nationalOutcome;
+    measureResultsRendered({ relevant: 0, resource: 0, fallback: 0, none: 1 });
+    return {
+      status: 'ok',
+      message: MESSAGES.browseNearby,
+      results: [],
+      disclaimers: notes,
+      objectClass: 'BROWSE_ALL',
+    };
+  }
+  measureResultsRendered({
+    relevant: list.filter((r) => r.class === RESULT_CLASS.RELEVANT).length,
+    resource: list.filter((r) => r.class === RESULT_CLASS.RESOURCE).length,
+    fallback: list.filter((r) => r.class === RESULT_CLASS.FALLBACK).length,
+    none: 0,
+  });
+  return {
+    status: 'ok',
+    message: MESSAGES.browseNearby,
+    results: list,
+    disclaimers: notes,
+    objectClass: 'BROWSE_ALL',
+  };
 }
 
 function fallbackMatchesGeography(source, zip, cityKey) {
@@ -140,8 +215,13 @@ function finalizeWithNationalFallback({
   const national = buildNationalResults(nationalZipContext, nationalRoute, zip, cityKey);
   if (national.results.length === 0) return null;
 
+  const browse = objectClass === 'BROWSE_ALL';
   const finalDisclaimers = [...disclaimers, ...national.disclaimers];
-  if (prependNoRelevant && !finalDisclaimers.includes(MESSAGES.noRelevantSource)) {
+  if (
+    prependNoRelevant &&
+    !browse &&
+    !finalDisclaimers.includes(MESSAGES.noRelevantSource)
+  ) {
     finalDisclaimers.unshift(MESSAGES.noRelevantSource);
   }
 
@@ -154,9 +234,9 @@ function finalizeWithNationalFallback({
 
   return {
     status: 'ok',
-    message: message || MESSAGES.noRelevantSource,
+    message: message || (browse ? MESSAGES.browseNearby : MESSAGES.noRelevantSource),
     results: national.results,
-    disclaimers: finalDisclaimers,
+    disclaimers: finalDisclaimers.filter((d) => !(browse && d === MESSAGES.noRelevantSource)),
     objectClass,
   };
 }
@@ -201,6 +281,24 @@ export function search({
 }) {
   if (locationMode === 'GEO' && geoTargetKind === 'national_outlet' && nationalZipContext?.source) {
     const objectNorm = normalizeObject(objectText);
+    if (objectNorm.status === 'BROWSE_ALL') {
+      const { results, disclaimers } = buildNationalResults(
+        nationalZipContext,
+        nationalRoute,
+        zip,
+        cityKey,
+      );
+      return finishBrowse({
+        results,
+        disclaimers,
+        locationMode,
+        geoDistanceMi: undefined,
+        nationalZipContext,
+        nationalRoute,
+        zip,
+        cityKey,
+      });
+    }
     measureSearchSubmitted({
       objectClass: objectNorm.status === 'SUPPORTED' ? objectNorm.objectClass : 'UNSUPPORTED',
       locationMode,
@@ -343,6 +441,25 @@ export function search({
     const wellFormedZip = zipResult.zip;
     const objectNorm = normalizeObject(objectText);
 
+    if (objectNorm.status === 'BROWSE_ALL') {
+      const { results, disclaimers } = buildNationalResults(
+        nationalZipContext || { kind: 'unknown' },
+        nationalRoute,
+        wellFormedZip,
+        cityKey,
+      );
+      return finishBrowse({
+        results,
+        disclaimers,
+        locationMode,
+        geoDistanceMi,
+        nationalZipContext,
+        nationalRoute,
+        zip: wellFormedZip,
+        cityKey,
+      });
+    }
+
     measureSearchSubmitted({
       objectClass: objectNorm.status === 'SUPPORTED' ? objectNorm.objectClass : 'UNSUPPORTED',
       locationMode,
@@ -384,6 +501,31 @@ export function search({
   const pilotZip = zipResult.zip;
   const zipInfo = PILOT_ZIPS[pilotZip];
   const objectNorm = normalizeObject(objectText);
+
+  if (objectNorm.status === 'BROWSE_ALL') {
+    if (zipInfo.noApprovedSource) {
+      return finishBrowse({
+        results: [],
+        disclaimers: [],
+        locationMode,
+        geoDistanceMi,
+        nationalZipContext,
+        nationalRoute,
+        zip: pilotZip,
+        cityKey,
+      });
+    }
+    return finishBrowse({
+      results: browseLocalResults(pilotZip, cityKey),
+      disclaimers: [],
+      locationMode,
+      geoDistanceMi,
+      nationalZipContext,
+      nationalRoute,
+      zip: pilotZip,
+      cityKey,
+    });
+  }
 
   if (objectNorm.status === 'UNSUPPORTED') {
     measureSearchSubmitted({

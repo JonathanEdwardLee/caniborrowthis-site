@@ -56,7 +56,7 @@ describe('P4-01 browser intro copy', () => {
     assert.match(body, /We link you to libraries and borrowing resources/);
     assert.match(body, /How Can I Borrow This works/);
     assert.match(body, /Library of Things/i);
-    assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
+    assert.equal(await page.locator('#object-input').inputValue(), 'all-explore-nearby');
 
     await page.screenshot({ path: '/workspace/evidence/pass012-desktop-intro.png', fullPage: true });
     await browser.close();
@@ -98,7 +98,7 @@ describe('SC-08 browser geolocation denied', () => {
 });
 
 describe('P5-04 browser release marker and distant geo verification', () => {
-  it('exposes pass012 marker and continues distant geo search without outside-limit dead end', async () => {
+  it('exposes pass013 marker and continues distant geo search without outside-limit dead end', async () => {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -111,11 +111,11 @@ describe('P5-04 browser release marker and distant geo verification', () => {
 
     await page.goto(ctx.baseUrl);
     const marker = await page.locator('#cibt-release-marker');
-    assert.equal(await marker.getAttribute('data-release'), 'pass012');
+    assert.equal(await marker.getAttribute('data-release'), 'pass013');
     assert.equal(await marker.getAttribute('data-commit'), null);
 
     const metaRelease = await page.locator('meta[name="cibt-release"]').getAttribute('content');
-    assert.equal(metaRelease, 'pass012');
+    assert.equal(metaRelease, 'pass013');
 
     await page.selectOption('#object-input', 'OBD-II scanner');
     await page.click('#locate-btn');
@@ -145,6 +145,7 @@ describe('P5-05 browser geo near 90210 skips no-source centroid', () => {
     });
 
     await page.goto(ctx.baseUrl);
+    await page.selectOption('#object-input', 'telescope');
     await page.click('#locate-btn');
     await page.waitForSelector('.result-card');
 
@@ -257,6 +258,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     });
 
     await page.goto(ctx.baseUrl);
+    await page.selectOption('#object-input', 'telescope');
     await page.click('#locate-btn');
     await page.waitForSelector('.result-card');
 
@@ -290,12 +292,12 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
 });
 
 describe('P10 browser guided discovery and explainer', () => {
-  it('searches with default telescope without changing selector', async () => {
+  it('searches with default All without changing selector', async () => {
     const browser = await chromium.launch();
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await page.goto(ctx.baseUrl);
 
-    assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
+    assert.equal(await page.locator('#object-input').inputValue(), 'all-explore-nearby');
     await page.fill('#zip-input', '01103');
     await page.click('button[type="submit"]');
     await page.waitForSelector('.result-card');
@@ -638,6 +640,85 @@ describe('P12-09 lazy-load network evidence', () => {
     assert.match(note, /permissioned location/i);
     assert.doesNotMatch(note, /Census|ZCTA/i);
 
+    await browser.close();
+  });
+});
+
+describe('P13 browser All/Explore and HSD credit', () => {
+  it('defaults to All, shows 36 options, and credits Hoopsnake Designs', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    assert.equal(await page.locator('#object-input').inputValue(), 'all-explore-nearby');
+    assert.equal(await page.locator('#object-input option').count(), 36);
+    assert.match(await page.locator('.builder-credit').innerText(), /Website built by Hoopsnake Designs/);
+    assert.equal(
+      await page.locator('.builder-credit a').getAttribute('href'),
+      'https://hoopsnakedesigns.com/',
+    );
+    await page.screenshot({ path: '/workspace/evidence/pass013-all-default-hsd.png', fullPage: true });
+    await browser.close();
+  });
+
+  it('Springfield ZIP + All ranks local borrowing/resource places first', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    await page.fill('#zip-input', '65807');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    const first = await page.locator('.result-card').first().innerText();
+    assert.match(first, /Laverne Schell Tool Library/i);
+    assert.doesNotMatch(await page.locator('#status-message').textContent(), /for this object/i);
+    await page.screenshot({ path: '/workspace/evidence/pass013-springfield-all.png', fullPage: true });
+    await browser.close();
+  });
+
+  it('Mountain Home ZIP + All shows Baxter County context', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    await page.fill('#zip-input', '72653');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
+    await page.screenshot({ path: '/workspace/evidence/pass013-mountain-home-all.png', fullPage: true });
+    await browser.close();
+  });
+
+  it('NYC GEO + All shows nearest national outlet with permissioned wording', async () => {
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.addInitScript(() => {
+      navigator.geolocation.getCurrentPosition = (success) => {
+        success({ coords: { latitude: 40.7589, longitude: -73.9851 } });
+      };
+    });
+    await page.goto(ctx.baseUrl);
+    await page.click('#locate-btn');
+    await page.waitForSelector('.result-card');
+    assert.match(await page.locator('.result-note').first().textContent(), /permissioned location/i);
+    assert.doesNotMatch(await page.locator('#status-message').textContent(), /for this object/i);
+    await page.screenshot({ path: '/workspace/evidence/pass013-nyc-geo-all.png', fullPage: true });
+    await browser.close();
+  });
+
+  it('mobile 390x844 All search and footer credit have no material overflow', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.goto(ctx.baseUrl);
+    assert.equal(await page.locator('#object-input').inputValue(), 'all-explore-nearby');
+    await page.fill('#zip-input', '01001');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    const overflow = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    assert.ok(overflow.scrollWidth <= overflow.clientWidth + 1);
+    assert.match(await page.locator('.builder-credit').innerText(), /Hoopsnake Designs/);
+    await page.screenshot({ path: '/workspace/evidence/pass013-mobile-all.png', fullPage: true });
     await browser.close();
   });
 });

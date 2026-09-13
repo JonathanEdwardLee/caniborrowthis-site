@@ -266,11 +266,11 @@ describe('P6-10 object-aware distant GEO context copy', () => {
   });
 });
 
-describe('P6-09 pass012 release identity and versioned assets', () => {
-  it('index.html requests pass012-versioned CSS and entry JS', async () => {
+describe('P6-09 pass013 release identity and versioned assets', () => {
+  it('index.html requests pass013-versioned CSS and entry JS', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /href="css\/styles\.css\?v=pass012"/);
-    assert.match(html, /src="js\/app\.js\?v=pass012"/);
+    assert.match(html, /href="css\/styles\.css\?v=pass013"/);
+    assert.match(html, /src="js\/app\.js\?v=pass013"/);
   });
 
   it('every relative runtime .js import uses pass012 version query', async () => {
@@ -283,22 +283,22 @@ describe('P6-09 pass012 release identity and versioned assets', () => {
       for (const [, specifier] of content.matchAll(importPattern)) {
         assert.match(
           specifier,
-          /\.js\?v=pass012$/,
-          `${relPath} import "${specifier}" must use ?v=pass012`,
+          /\.js\?v=pass013$/,
+          `${relPath} import "${specifier}" must use ?v=pass013`,
         );
       }
     }
   });
 
-  it('index.html exposes pass012 release meta and hidden DOM marker', async () => {
+  it('index.html exposes pass013 release meta and hidden DOM marker', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /<meta name="cibt-release" content="pass012">/);
-    assert.match(html, /id="cibt-release-marker"[^>]*data-release="pass012"/);
+    assert.match(html, /<meta name="cibt-release" content="pass013">/);
+    assert.match(html, /id="cibt-release-marker"[^>]*data-release="pass013"/);
   });
 
-  it('release.js exports pass012 identity without commit stamp', async () => {
-    assert.equal(CIBT_RELEASE.pass, 'pass012');
-    assert.equal(CIBT_RELEASE.version, 'pass012');
+  it('release.js exports pass013 identity without commit stamp', async () => {
+    assert.equal(CIBT_RELEASE.pass, 'pass013');
+    assert.equal(CIBT_RELEASE.version, 'pass013');
     assert.equal(CIBT_RELEASE.commit, undefined);
   });
 });
