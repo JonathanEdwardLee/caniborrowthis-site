@@ -42,7 +42,7 @@ describe('P11-01 transfer integrity', () => {
     }
   });
 
-  it('has 76 city rows, 75 route-eligible, one REVIEW_HOLD', () => {
+  it('has 76 city rows, 75 route-eligible, one REVIEW_HOLD', async () => {
     assert.equal(OZARKS_CITIES.length, 76);
     assert.equal(OZARKS_CITIES.filter((c) => c.productRouteEligible).length, 75);
     assert.equal(OZARKS_CITIES.filter((c) => c.reviewHold).length, 1);
@@ -53,7 +53,7 @@ describe('P11-01 transfer integrity', () => {
 });
 
 describe('P11-02 Eureka AR REVIEW_HOLD never routes', () => {
-  it('has no ZIP, coordinates, or product route', () => {
+  it('has no ZIP, coordinates, or product route', async () => {
     const eureka = getOzarksCity('Eureka', 'AR');
     assert.ok(eureka);
     assert.equal(eureka.productRouteEligible, false);
@@ -66,7 +66,7 @@ describe('P11-02 Eureka AR REVIEW_HOLD never routes', () => {
     assert.ok(!Object.values(PILOT_ZIPS).some((info) => info.ozarksCityKey === 'Eureka|AR'));
   });
 
-  it('does not collapse Eureka AR into Eureka Springs', () => {
+  it('does not collapse Eureka AR into Eureka Springs', async () => {
     const springs = getOzarksCity('Eureka Springs', 'AR');
     const eureka = getOzarksCity('Eureka', 'AR');
     assert.ok(springs.productRouteEligible);
@@ -80,7 +80,7 @@ describe('P11-02 Eureka AR REVIEW_HOLD never routes', () => {
 });
 
 describe('P11-03 Springfield and Mountain Home regressions', () => {
-  it('keeps Pass-010 specialist sources first', () => {
+  it('keeps Pass-010 specialist sources first', async () => {
     const washer = search({ objectText: 'pressure washer', zip: '65807', locationMode: 'ZIP' });
     assert.equal(washer.results[0].sourceId, 'S7_SPRINGFIELD_TOOL_LIBRARY');
     const pole = search({ objectText: 'fishing pole', zip: '72653', locationMode: 'ZIP' });
@@ -93,7 +93,7 @@ describe('P11-03 Springfield and Mountain Home regressions', () => {
 });
 
 describe('P11-04 representative ZIP fallbacks', () => {
-  it('routes Lampe, Point Lookout, Ridgedale, and Locust Grove to generic ask/check sources', () => {
+  it('routes Lampe, Point Lookout, Ridgedale, and Locust Grove to generic ask/check sources', async () => {
     for (const zip of ['65681', '65726', '65739', '72550']) {
       const out = search({ objectText: 'telescope', zip, locationMode: 'ZIP' });
       assert.equal(out.status, 'ok', zip);
@@ -108,22 +108,27 @@ describe('P11-04 representative ZIP fallbacks', () => {
   });
 });
 
-describe('P11-05 malformed vs unsupported ZIP', () => {
-  it('distinguishes format-invalid from well-formed uncovered ZIP', () => {
+describe('P11-05 malformed vs unknown ZIP', () => {
+  it('distinguishes format-invalid from well-formed unknown ZIP', async () => {
     assert.equal(validateZip('12a45').status, 'INVALID');
-    assert.equal(validateZip('99999').status, 'UNSUPPORTED');
+    assert.equal(validateZip('99999').status, 'WELL_FORMED');
     const bad = search({ objectText: 'telescope', zip: '12a45' });
     assert.equal(bad.status, 'error');
     assert.equal(bad.message, MESSAGES.invalidZip);
-    const unsupported = search({ objectText: 'telescope', zip: '99999' });
-    assert.equal(unsupported.status, 'error');
-    assert.equal(unsupported.message, MESSAGES.unsupportedZip);
-    assert.notEqual(bad.message, unsupported.message);
+    const { searchWithNational } = await import('./helpers/national.mjs');
+    const unknown = await searchWithNational(search, {
+      objectText: 'telescope',
+      zip: '99999',
+      locationMode: 'ZIP',
+    });
+    assert.equal(unknown.status, 'ok');
+    assert.ok(unknown.results.some((r) => /IMLS Search & Compare/i.test(r.title)));
+    assert.notEqual(bad.message, unknown.message);
   });
 });
 
 describe('P11-06 HOLD and CANDIDATE probes stay unpublished as specialists', () => {
-  it('does not publish HOLD or CANDIDATE as relevant borrowing programs', () => {
+  it('does not publish HOLD or CANDIDATE as relevant borrowing programs', async () => {
     assert.ok(!OZARKS_SOURCES.some((s) => s.probeStatus === 'HOLD'));
     assert.ok(!OZARKS_SOURCES.some((s) => s.probeStatus === 'CANDIDATE'));
     const joplin = search({ objectText: 'telescope', zip: '64801', locationMode: 'ZIP' });
@@ -132,7 +137,7 @@ describe('P11-06 HOLD and CANDIDATE probes stay unpublished as specialists', () 
     assert.ok(!eurekaSprings.results.some((r) => r.class === RESULT_CLASS.RELEVANT && /Eureka Springs/i.test(r.title)));
   });
 
-  it('does not promote Bentonville DIY tools evidence into a pressure-washer relevant claim', () => {
+  it('does not promote Bentonville DIY tools evidence into a pressure-washer relevant claim', async () => {
     const out = search({ objectText: 'pressure washer', zip: '72712', locationMode: 'ZIP' });
     assert.ok(!out.results.some((r) => r.class === RESULT_CLASS.RELEVANT));
     const diy = search({ objectText: 'home repair tool', zip: '72712', locationMode: 'ZIP' });
@@ -144,7 +149,7 @@ describe('P11-06 HOLD and CANDIDATE probes stay unpublished as specialists', () 
 });
 
 describe('P11-07 accepted specialists outrank generic fallback', () => {
-  it('ranks Rogers telescope above nearby-library fallback', () => {
+  it('ranks Rogers telescope above nearby-library fallback', async () => {
     const out = search({ objectText: 'telescope', zip: '72758', locationMode: 'ZIP' });
     assert.equal(out.results[0].sourceId, 'OZ_ROGERS_TELESCOPE');
     assert.equal(out.results[0].class, RESULT_CLASS.RELEVANT);
@@ -154,18 +159,18 @@ describe('P11-07 accepted specialists outrank generic fallback', () => {
 });
 
 describe('P11-08 Pass-010 non-Ozarks regressions', () => {
-  it('keeps Altoona sewing and MA telescope resource working', () => {
+  it('keeps Altoona sewing and MA telescope resource working', async () => {
     const sewing = search({ objectText: 'sewing machine', zip: '16693' });
     assert.equal(sewing.results[0].sourceId, 'S1_ALTOONA_TOOL');
     const ma = search({ objectText: 'telescope', zip: '01103' });
     assert.ok(ma.results.some((r) => r.sourceId === 'S3_MA_LIBRARY_OF_THINGS'));
-    const huntsville = resolveGeoSearchTarget(34.7304, -86.5861, 'sewing machine');
+    const huntsville = await resolveGeoSearchTarget(34.7304, -86.5861, 'sewing machine');
     assert.equal(huntsville.zip, '16693');
   });
 });
 
 describe('P11-09 analytics still omit raw object/ZIP/coordinates', () => {
-  it('search_submitted still uses object_class only and ignores extra location fields', () => {
+  it('search_submitted still uses object_class only and ignores extra location fields', async () => {
     const calls = [];
     const gtag = (...args) => calls.push(args);
     bridgeEventToGa4(
@@ -222,7 +227,7 @@ describe('P11-13 shared representative ZIP honesty', () => {
   const prairieGrove = getOzarksCity('Prairie Grove', 'AR');
   const fayetteville = getOzarksCity('Fayetteville', 'AR');
 
-  it('identifies shared representative ZIPs and marks 72730 as conflicting', () => {
+  it('identifies shared representative ZIPs and marks 72730 as conflicting', async () => {
     assert.ok(Object.keys(OZARKS_SHARED_REPRESENTATIVE_ZIPS).length >= 3);
     assert.equal(OZARKS_SHARED_REPRESENTATIVE_ZIPS['72730'].kind, 'conflicting');
     assert.ok(
@@ -238,15 +243,15 @@ describe('P11-13 shared representative ZIP honesty', () => {
     assert.equal(OZARKS_SHARED_REPRESENTATIVE_ZIPS['72762'].kind, 'destination_equivalent');
   });
 
-  it('does not auto-promote Fayetteville specialists on manual ZIP 72730', () => {
+  it('does not auto-promote Fayetteville specialists on manual ZIP 72730', async () => {
     const out = search({ objectText: '3D printer', zip: '72730', locationMode: 'ZIP' });
     assert.ok(!out.results.some((r) => r.sourceId === 'OZ_FAYETTEVILLE_FAB_LAB'));
     assert.ok(out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
     assert.ok(out.results.some((r) => /Arkansas State Library/i.test(r.title)));
   });
 
-  it('GEO at Farmington cannot pair a Farmington context with Fayetteville-specific results', () => {
-    const target = resolveGeoSearchTarget(farmington.lat, farmington.lon, '3D printer');
+  it('GEO at Farmington cannot pair a Farmington context with Fayetteville-specific results', async () => {
+    const target = await resolveGeoSearchTarget(farmington.lat, farmington.lon, '3D printer');
     if (target.kind === 'zip' && /Farmington/i.test(target.label)) {
       const out = search({
         objectText: '3D printer',
@@ -260,7 +265,7 @@ describe('P11-13 shared representative ZIP honesty', () => {
       assert.ok(!/Farmington/i.test(target.label || ''));
     }
 
-    const fallbackTarget = resolveGeoSearchTarget(farmington.lat, farmington.lon, 'chainsaw');
+    const fallbackTarget = await resolveGeoSearchTarget(farmington.lat, farmington.lon, 'chainsaw');
     assert.equal(fallbackTarget.kind, 'zip');
     assert.match(fallbackTarget.label, /Farmington/i);
     assert.equal(fallbackTarget.cityKey, 'Farmington|AR');
@@ -275,8 +280,8 @@ describe('P11-13 shared representative ZIP honesty', () => {
     assert.ok(!fallbackOut.results.some((r) => /Fabrication/i.test(r.title)));
   });
 
-  it('GEO at Prairie Grove cannot pair a Prairie Grove context with Fayetteville-specific results', () => {
-    const target = resolveGeoSearchTarget(prairieGrove.lat, prairieGrove.lon, 'chainsaw');
+  it('GEO at Prairie Grove cannot pair a Prairie Grove context with Fayetteville-specific results', async () => {
+    const target = await resolveGeoSearchTarget(prairieGrove.lat, prairieGrove.lon, 'chainsaw');
     assert.equal(target.kind, 'zip');
     assert.match(target.label, /Prairie Grove/i);
     assert.equal(target.cityKey, 'Prairie Grove|AR');
@@ -291,8 +296,8 @@ describe('P11-13 shared representative ZIP honesty', () => {
     assert.ok(!out.results.some((r) => /Fabrication/i.test(r.title)));
   });
 
-  it('Fayetteville-specific GEO routing is driven by retained city identity', () => {
-    const target = resolveGeoSearchTarget(fayetteville.lat, fayetteville.lon, '3D printer');
+  it('Fayetteville-specific GEO routing is driven by retained city identity', async () => {
+    const target = await resolveGeoSearchTarget(fayetteville.lat, fayetteville.lon, '3D printer');
     assert.equal(target.kind, 'zip');
     assert.equal(target.cityKey, 'Fayetteville|AR');
     assert.match(target.label, /Fayetteville/i);
@@ -306,7 +311,7 @@ describe('P11-13 shared representative ZIP honesty', () => {
     assert.ok(out.results.some((r) => r.sourceId === 'OZ_FAYETTEVILLE_FAB_LAB'));
   });
 
-  it('destination-equivalent shared ZIP 65726 still routes to an official ask/check source', () => {
+  it('destination-equivalent shared ZIP 65726 still routes to an official ask/check source', async () => {
     const out = search({ objectText: 'garden tool', zip: '65726', locationMode: 'ZIP' });
     assert.ok(out.results.some((r) => r.class === RESULT_CLASS.FALLBACK));
   });

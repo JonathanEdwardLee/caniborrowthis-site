@@ -1,10 +1,14 @@
-import { getAllSources, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass011';
-import { normalizeObject } from './normalize.js?v=pass011';
-import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass011';
+import { getAllSources, RESULT_CLASS, RESULT_CLASS_LABEL, PILOT_ZIPS } from './data.js?v=pass012';
+import { normalizeObject } from './normalize.js?v=pass012';
+import { validateZip, formatApproxDistance, GEO_CONTEXT_THRESHOLD_MI } from './geo.js?v=pass012';
+import {
+  buildImlsSearchCompareSource,
+  nationalSourceToResult,
+} from './national-routing.js?v=pass012';
 import {
   measureSearchSubmitted,
   measureResultsRendered,
-} from './measure.js?v=pass011';
+} from './measure.js?v=pass012';
 
 const CLASS_RANK = {
   [RESULT_CLASS.RELEVANT]: 1,
@@ -14,8 +18,8 @@ const CLASS_RANK = {
 
 const MESSAGES = {
   invalidZip: 'Enter a valid 5-digit ZIP.',
-  unsupportedZip:
-    "We don't cover that ZIP yet. Try Use my location to see the closest area we cover.",
+  unknownZip:
+    "This ZIP is outside our accepted observed reference data. Try IMLS Search & Compare below to find libraries.",
   noRelevantSource:
     "We don't have a relevant borrowing source for this object in this area yet.",
   noNearbyEvidence: 'No approved borrowing source is known for this area yet.',
@@ -77,6 +81,86 @@ function applyDistantGeoTrustPolicy(results, disclaimers, locationMode, geoDista
   return { results: filteredResults, disclaimers: filteredDisclaimers };
 }
 
+function hasLocalFallbackForZip(sources, zip, cityKey) {
+  return sources.some((s) => fallbackMatchesGeography(s, zip, cityKey));
+}
+
+function buildNationalResults(nationalZipContext, nationalRoute, zip, cityKey) {
+  const results = [];
+  const disclaimers = [];
+
+  if (nationalRoute) {
+    const source = buildImlsSearchCompareSource(`NAT_GEO_${zip}`);
+    if (nationalRoute.routeClass !== 'OBSERVED_REFERENCE_INDIRECT_ONLY') {
+      // nationalRoute from GEO is resolved to a source upstream in app.js via nationalZipContext
+    }
+  }
+
+  if (nationalZipContext?.source) {
+    results.push(nationalSourceToResult(nationalZipContext.source, zip));
+    if (nationalZipContext.source.routeClass === 'EXACT_IMLS_SYSTEM_ZIP') {
+      disclaimers.push(
+        'This is an active IMLS system/admin identity at the observed ZIP — not a physical nearby outlet.',
+      );
+    }
+    return { results, disclaimers };
+  }
+
+  if (
+    nationalZipContext?.kind === 'unknown' ||
+    nationalZipContext?.route?.routeClass === 'OBSERVED_REFERENCE_INDIRECT_ONLY'
+  ) {
+    const source = buildImlsSearchCompareSource(
+      nationalZipContext?.route ? `NAT_IMLS_${zip}` : 'NAT_IMLS_UNKNOWN',
+    );
+    if (nationalZipContext?.kind === 'unknown') {
+      source.geographyZips = [zip];
+      source.note =
+        'This well-formed ZIP is outside our accepted observed reference universe; use IMLS Search & Compare to find libraries. We do not infer state from ZIP prefix or claim current USPS validity.';
+    }
+    results.push(nationalSourceToResult(source, zip));
+    if (nationalZipContext?.kind === 'unknown') {
+      disclaimers.push(MESSAGES.unknownZip);
+    }
+  }
+
+  return { results, disclaimers };
+}
+
+function finalizeWithNationalFallback({
+  nationalZipContext,
+  nationalRoute,
+  zip,
+  cityKey,
+  objectClass,
+  disclaimers = [],
+  message = null,
+  prependNoRelevant = true,
+}) {
+  const national = buildNationalResults(nationalZipContext, nationalRoute, zip, cityKey);
+  if (national.results.length === 0) return null;
+
+  const finalDisclaimers = [...disclaimers, ...national.disclaimers];
+  if (prependNoRelevant && !finalDisclaimers.includes(MESSAGES.noRelevantSource)) {
+    finalDisclaimers.unshift(MESSAGES.noRelevantSource);
+  }
+
+  measureResultsRendered({
+    relevant: 0,
+    resource: 0,
+    fallback: national.results.length,
+    none: 0,
+  });
+
+  return {
+    status: 'ok',
+    message: message || MESSAGES.noRelevantSource,
+    results: national.results,
+    disclaimers: finalDisclaimers,
+    objectClass,
+  };
+}
+
 function buildResult(source, zip) {
   const result = {
     sourceId: source.id,
@@ -103,9 +187,55 @@ function buildResult(source, zip) {
 
 /**
  * Core search logic — pure function for testability.
- * @param {{ objectText: string, zip: string, locationMode?: 'ZIP' | 'GEO', geoDistanceMi?: number, geoTargetKind?: 'national' | 'no_zip' }} input
+ * @param {{ objectText: string, zip: string, locationMode?: 'ZIP' | 'GEO', geoDistanceMi?: number, geoTargetKind?: 'national' | 'no_zip' | 'national_outlet', nationalZipContext?: object, nationalRoute?: object }} input
  */
-export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, geoTargetKind, cityKey }) {
+export function search({
+  objectText,
+  zip,
+  locationMode = 'ZIP',
+  geoDistanceMi,
+  geoTargetKind,
+  cityKey,
+  nationalZipContext = null,
+  nationalRoute = null,
+}) {
+  if (locationMode === 'GEO' && geoTargetKind === 'national_outlet' && nationalZipContext?.source) {
+    const objectNorm = normalizeObject(objectText);
+    measureSearchSubmitted({
+      objectClass: objectNorm.status === 'SUPPORTED' ? objectNorm.objectClass : 'UNSUPPORTED',
+      locationMode,
+      coverageState: objectNorm.status === 'SUPPORTED' ? 'SUPPORTED' : 'UNSUPPORTED',
+    });
+
+    const { results, disclaimers } = buildNationalResults(
+      nationalZipContext,
+      nationalRoute,
+      zip,
+      cityKey,
+    );
+    if (objectNorm.status === 'UNSUPPORTED') {
+      disclaimers.unshift(MESSAGES.unsupportedObject);
+    } else if (objectNorm.status === 'UNRECOGNIZED') {
+      disclaimers.unshift(MESSAGES.unrecognizedObject);
+    } else if (results.length > 0) {
+      disclaimers.unshift(MESSAGES.noRelevantSource);
+    }
+
+    measureResultsRendered({
+      relevant: 0,
+      resource: 0,
+      fallback: results.length,
+      none: results.length === 0 ? 1 : 0,
+    });
+
+    return {
+      status: 'ok',
+      message: results.length ? MESSAGES.noRelevantSource : MESSAGES.noNearbyEvidence,
+      results,
+      disclaimers,
+      objectClass: objectNorm.status === 'SUPPORTED' ? objectNorm.objectClass : null,
+    };
+  }
   if (locationMode === 'GEO' && geoTargetKind === 'national') {
     const objectNorm = normalizeObject(objectText);
     if (objectNorm.status !== 'SUPPORTED') {
@@ -209,17 +339,45 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
     };
   }
 
-  if (zipResult.status === 'UNSUPPORTED') {
+  if (zipResult.status === 'WELL_FORMED') {
+    const wellFormedZip = zipResult.zip;
+    const objectNorm = normalizeObject(objectText);
+
     measureSearchSubmitted({
-      objectClass: 'UNSUPPORTED',
+      objectClass: objectNorm.status === 'SUPPORTED' ? objectNorm.objectClass : 'UNSUPPORTED',
       locationMode,
-      coverageState: 'UNSUPPORTED',
+      coverageState: 'SUPPORTED',
     });
+
+    const { results, disclaimers: nationalDisclaimers } = buildNationalResults(
+      nationalZipContext || { kind: 'unknown' },
+      nationalRoute,
+      wellFormedZip,
+      cityKey,
+    );
+
+    let disclaimers = [...nationalDisclaimers];
+    if (objectNorm.status === 'UNSUPPORTED') {
+      disclaimers.unshift(MESSAGES.unsupportedObject);
+    } else if (objectNorm.status === 'UNRECOGNIZED') {
+      disclaimers.unshift(MESSAGES.unrecognizedObject);
+    } else if (results.length > 0) {
+      disclaimers.unshift(MESSAGES.noRelevantSource);
+    }
+
+    measureResultsRendered({
+      relevant: 0,
+      resource: 0,
+      fallback: results.length,
+      none: results.length === 0 ? 1 : 0,
+    });
+
     return {
-      status: 'error',
-      message: MESSAGES.unsupportedZip,
-      results: [],
-      disclaimers: [],
+      status: 'ok',
+      message: results.length ? MESSAGES.noRelevantSource : MESSAGES.noNearbyEvidence,
+      results,
+      disclaimers,
+      objectClass: objectNorm.status === 'SUPPORTED' ? objectNorm.objectClass : null,
     };
   }
 
@@ -257,6 +415,19 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
       message = MESSAGES.noNearbyEvidence;
     }
 
+    if (results.length === 0) {
+      const nationalOutcome = finalizeWithNationalFallback({
+        nationalZipContext,
+        nationalRoute,
+        zip: pilotZip,
+        cityKey,
+        objectClass: null,
+        disclaimers,
+        prependNoRelevant: false,
+      });
+      if (nationalOutcome) return nationalOutcome;
+    }
+
     measureResultsRendered({
       relevant: 0,
       resource: 0,
@@ -292,13 +463,16 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
     }
 
     if (zipInfo.noApprovedSource) {
-      return {
-        status: 'ok',
-        message: MESSAGES.noNearbyEvidence,
-        results: [],
-        disclaimers: [MESSAGES.unrecognizedObject],
+      const nationalOutcome = finalizeWithNationalFallback({
+        nationalZipContext,
+        nationalRoute,
+        zip: pilotZip,
+        cityKey,
         objectClass: null,
-      };
+        disclaimers: [MESSAGES.unrecognizedObject],
+        prependNoRelevant: false,
+      });
+      if (nationalOutcome) return nationalOutcome;
     }
 
     if (fallbacks.length === 0 && !hasRelevantOrResource) {
@@ -348,17 +522,6 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
     coverageState: 'SUPPORTED',
   });
 
-  if (zipInfo.noApprovedSource) {
-    measureResultsRendered({ relevant: 0, resource: 0, fallback: 0, none: 1 });
-    return {
-      status: 'ok',
-      message: MESSAGES.noNearbyEvidence,
-      results: [],
-      disclaimers: [],
-      objectClass,
-    };
-  }
-
   const relevant = getAllSources()
     .filter(
       (s) =>
@@ -389,6 +552,16 @@ export function search({ objectText, zip, locationMode = 'ZIP', geoDistanceMi, g
   }
 
   if (!hasRelevantOrResource && fallbacks.length === 0) {
+    const nationalOutcome = finalizeWithNationalFallback({
+      nationalZipContext,
+      nationalRoute,
+      zip: pilotZip,
+      cityKey,
+      objectClass,
+      disclaimers: [],
+    });
+    if (nationalOutcome) return nationalOutcome;
+
     measureResultsRendered({ relevant: 0, resource: 0, fallback: 0, none: 1 });
     return {
       status: 'ok',
