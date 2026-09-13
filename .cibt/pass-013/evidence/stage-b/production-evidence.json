@@ -1,0 +1,369 @@
+{
+  "capturedAt": "2026-09-13T11:26:23.654Z",
+  "productionUrl": "https://caniborrowthis.com/",
+  "liveHtml": {
+    "capturedAt": "2026-09-13T11:26:23.654Z",
+    "productionUrl": "https://caniborrowthis.com/",
+    "releaseMeta": "pass012",
+    "hasHsdCredit": false,
+    "hsdHref": null,
+    "hasGa4": true,
+    "hasSearchConsole": true,
+    "hasPrivacyDisclosure": true,
+    "hasLotExplainer": true,
+    "hasFakeTestimonial": false,
+    "hasRevenueClaim": false
+  },
+  "cases": [
+    {
+      "id": "initial_page",
+      "class": "initial_page",
+      "productionUrl": "https://caniborrowthis.com/",
+      "input": {
+        "zip": null,
+        "object": null,
+        "geo": null,
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        }
+      },
+      "optionCount": 35,
+      "nationalJsonRequested": [],
+      "nationalJsonCount": 0,
+      "nationalBytes": {
+        "transferSizeSum": 0,
+        "encodedBodySizeSum": 0,
+        "decodedBodySizeSum": 0,
+        "entries": []
+      },
+      "allRequestCount": 15,
+      "firstUsefulResultRendered": null,
+      "firstResult": null,
+      "overflow": null,
+      "screenshot": ".cibt/pass-013/evidence/stage-b/initial_page.png",
+      "latencyClaim": "Local collector timing is observational only and does not predict internet latency."
+    },
+    {
+      "id": "exact_outlet_zip_01001",
+      "class": "exact-outlet national ZIP",
+      "productionUrl": "https://caniborrowthis.com/",
+      "input": {
+        "zip": "01001",
+        "object": "telescope",
+        "geo": null,
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        }
+      },
+      "optionCount": null,
+      "nationalJsonRequested": [
+        "https://caniborrowthis.com/js/national/routes/01.json",
+        "https://caniborrowthis.com/js/national/destinations.json",
+        "https://caniborrowthis.com/js/national/outlets.json"
+      ],
+      "nationalJsonCount": 3,
+      "nationalBytes": {
+        "transferSizeSum": 1030683,
+        "encodedBodySizeSum": 1029783,
+        "decodedBodySizeSum": 5651189,
+        "entries": [
+          {
+            "name": "https://caniborrowthis.com/js/national/routes/01.json",
+            "transferSize": 2233,
+            "encodedBodySize": 1933,
+            "decodedBodySize": 14826,
+            "initiatorType": "fetch"
+          },
+          {
+            "name": "https://caniborrowthis.com/js/national/destinations.json",
+            "transferSize": 252069,
+            "encodedBodySize": 251769,
+            "decodedBodySize": 2361605,
+            "initiatorType": "fetch"
+          },
+          {
+            "name": "https://caniborrowthis.com/js/national/outlets.json",
+            "transferSize": 776381,
+            "encodedBodySize": 776081,
+            "decodedBodySize": 3274758,
+            "initiatorType": "fetch"
+          }
+        ]
+      },
+      "allRequestCount": 19,
+      "firstUsefulResultRendered": true,
+      "firstResult": {
+        "title": "Agawam Public Library — official page to ask/check",
+        "note": "Active IMLS outlet identity at this observed official ZIP identifier; not current USPS validity or live inventory proof. Check the linked source.",
+        "status": "We don't have a relevant borrowing source for this object in this area yet."
+      },
+      "overflow": null,
+      "screenshot": ".cibt/pass-013/evidence/stage-b/exact_outlet_zip_01001.png",
+      "latencyClaim": "Local collector timing is observational only and does not predict internet latency."
+    },
+    {
+      "id": "zcta_nearest_zip_00601",
+      "class": "ZCTA-nearest ZIP",
+      "productionUrl": "https://caniborrowthis.com/",
+      "input": {
+        "zip": "00601",
+        "object": "telescope",
+        "geo": null,
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        }
+      },
+      "optionCount": null,
+      "nationalJsonRequested": [
+        "https://caniborrowthis.com/js/national/routes/00.json",
+        "https://caniborrowthis.com/js/national/destinations.json",
+        "https://caniborrowthis.com/js/national/outlets.json"
+      ],
+      "nationalJsonCount": 3,
+      "nationalBytes": {
+        "transferSizeSum": 948955,
+        "encodedBodySizeSum": 948055,
+        "decodedBodySizeSum": 5643832,
+        "entries": [
+          {
+            "name": "https://caniborrowthis.com/js/national/routes/00.json",
+            "transferSize": 1263,
+            "encodedBodySize": 963,
+            "decodedBodySize": 7469,
+            "initiatorType": "fetch"
+          },
+          {
+            "name": "https://caniborrowthis.com/js/national/destinations.json",
+            "transferSize": 171311,
+            "encodedBodySize": 171011,
+            "decodedBodySize": 2361605,
+            "initiatorType": "fetch"
+          },
+          {
+            "name": "https://caniborrowthis.com/js/national/outlets.json",
+            "transferSize": 776381,
+            "encodedBodySize": 776081,
+            "decodedBodySize": 3274758,
+            "initiatorType": "fetch"
+          }
+        ]
+      },
+      "allRequestCount": 20,
+      "firstUsefulResultRendered": true,
+      "firstResult": {
+        "title": "Key Largo Branch — official page to ask/check",
+        "note": "Straight-line nearest active IMLS outlet context from accepted Census ZCTA data; not eligibility, residency, service-area, or inventory proof.",
+        "status": "We don't have a relevant borrowing source for this object in this area yet."
+      },
+      "overflow": null,
+      "screenshot": ".cibt/pass-013/evidence/stage-b/zcta_nearest_zip_00601.png",
+      "latencyClaim": "Local collector timing is observational only and does not predict internet latency."
+    },
+    {
+      "id": "indirect_only_zip_96801",
+      "class": "indirect-only ZIP",
+      "productionUrl": "https://caniborrowthis.com/",
+      "input": {
+        "zip": "96801",
+        "object": "telescope",
+        "geo": null,
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        }
+      },
+      "optionCount": null,
+      "nationalJsonRequested": [
+        "https://caniborrowthis.com/js/national/routes/96.json"
+      ],
+      "nationalJsonCount": 1,
+      "nationalBytes": {
+        "transferSizeSum": 2079,
+        "encodedBodySizeSum": 1779,
+        "decodedBodySizeSum": 11922,
+        "entries": [
+          {
+            "name": "https://caniborrowthis.com/js/national/routes/96.json",
+            "transferSize": 2079,
+            "encodedBodySize": 1779,
+            "decodedBodySize": 11922,
+            "initiatorType": "fetch"
+          }
+        ]
+      },
+      "allRequestCount": 17,
+      "firstUsefulResultRendered": true,
+      "firstResult": {
+        "title": "IMLS Search & Compare — official library finder",
+        "note": "Observed official reference with no safe exact or coordinate route; use IMLS Search & Compare. This is not a rejection.",
+        "status": "We don't have a relevant borrowing source for this object in this area yet."
+      },
+      "overflow": null,
+      "screenshot": ".cibt/pass-013/evidence/stage-b/indirect_only_zip_96801.png",
+      "latencyClaim": "Local collector timing is observational only and does not predict internet latency."
+    },
+    {
+      "id": "unknown_zip_99999",
+      "class": "unknown well-formed ZIP",
+      "productionUrl": "https://caniborrowthis.com/",
+      "input": {
+        "zip": "99999",
+        "object": "telescope",
+        "geo": null,
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        }
+      },
+      "optionCount": null,
+      "nationalJsonRequested": [
+        "https://caniborrowthis.com/js/national/routes/99.json"
+      ],
+      "nationalJsonCount": 1,
+      "nationalBytes": {
+        "transferSizeSum": 3400,
+        "encodedBodySizeSum": 3100,
+        "decodedBodySizeSum": 20053,
+        "entries": [
+          {
+            "name": "https://caniborrowthis.com/js/national/routes/99.json",
+            "transferSize": 3400,
+            "encodedBodySize": 3100,
+            "decodedBodySize": 20053,
+            "initiatorType": "fetch"
+          }
+        ]
+      },
+      "allRequestCount": 17,
+      "firstUsefulResultRendered": true,
+      "firstResult": {
+        "title": "IMLS Search & Compare — official library finder",
+        "note": "This well-formed ZIP is outside our accepted observed reference universe; use IMLS Search & Compare to find libraries. We do not infer state from ZIP prefix or claim current USPS validity.",
+        "status": "We don't have a relevant borrowing source for this object in this area yet."
+      },
+      "overflow": null,
+      "screenshot": ".cibt/pass-013/evidence/stage-b/unknown_zip_99999.png",
+      "latencyClaim": "Local collector timing is observational only and does not predict internet latency."
+    },
+    {
+      "id": "geo_national_nyc_chainsaw",
+      "class": "GEO national search",
+      "productionUrl": "https://caniborrowthis.com/",
+      "input": {
+        "zip": null,
+        "object": "chainsaw",
+        "geo": {
+          "lat": 40.7589,
+          "lon": -73.9851
+        },
+        "viewport": {
+          "width": 1280,
+          "height": 900
+        }
+      },
+      "optionCount": null,
+      "nationalJsonRequested": [
+        "https://caniborrowthis.com/js/national/outlets.json",
+        "https://caniborrowthis.com/js/national/destinations.json"
+      ],
+      "nationalJsonCount": 2,
+      "nationalBytes": {
+        "transferSizeSum": 947692,
+        "encodedBodySizeSum": 947092,
+        "decodedBodySizeSum": 5636363,
+        "entries": [
+          {
+            "name": "https://caniborrowthis.com/js/national/outlets.json",
+            "transferSize": 776381,
+            "encodedBodySize": 776081,
+            "decodedBodySize": 3274758,
+            "initiatorType": "fetch"
+          },
+          {
+            "name": "https://caniborrowthis.com/js/national/destinations.json",
+            "transferSize": 171311,
+            "encodedBodySize": 171011,
+            "decodedBodySize": 2361605,
+            "initiatorType": "fetch"
+          }
+        ]
+      },
+      "allRequestCount": 17,
+      "firstUsefulResultRendered": true,
+      "firstResult": {
+        "title": "53rd Street Library — official page to ask/check",
+        "note": "Straight-line nearest active public-library outlet context from your permissioned location; not eligibility, residency, service-area, or inventory proof.",
+        "status": "We don't have a relevant borrowing source for this object in this area yet."
+      },
+      "overflow": null,
+      "screenshot": ".cibt/pass-013/evidence/stage-b/geo_national_nyc_chainsaw.png",
+      "latencyClaim": "Local collector timing is observational only and does not predict internet latency."
+    },
+    {
+      "id": "mobile_exact_outlet_01001",
+      "class": "mobile practicality",
+      "productionUrl": "https://caniborrowthis.com/",
+      "input": {
+        "zip": "01001",
+        "object": "telescope",
+        "geo": null,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        }
+      },
+      "optionCount": null,
+      "nationalJsonRequested": [
+        "https://caniborrowthis.com/js/national/routes/01.json",
+        "https://caniborrowthis.com/js/national/destinations.json",
+        "https://caniborrowthis.com/js/national/outlets.json"
+      ],
+      "nationalJsonCount": 3,
+      "nationalBytes": {
+        "transferSizeSum": 949925,
+        "encodedBodySizeSum": 949025,
+        "decodedBodySizeSum": 5651189,
+        "entries": [
+          {
+            "name": "https://caniborrowthis.com/js/national/routes/01.json",
+            "transferSize": 2233,
+            "encodedBodySize": 1933,
+            "decodedBodySize": 14826,
+            "initiatorType": "fetch"
+          },
+          {
+            "name": "https://caniborrowthis.com/js/national/destinations.json",
+            "transferSize": 171311,
+            "encodedBodySize": 171011,
+            "decodedBodySize": 2361605,
+            "initiatorType": "fetch"
+          },
+          {
+            "name": "https://caniborrowthis.com/js/national/outlets.json",
+            "transferSize": 776381,
+            "encodedBodySize": 776081,
+            "decodedBodySize": 3274758,
+            "initiatorType": "fetch"
+          }
+        ]
+      },
+      "allRequestCount": 19,
+      "firstUsefulResultRendered": true,
+      "firstResult": {
+        "title": "Agawam Public Library — official page to ask/check",
+        "note": "Active IMLS outlet identity at this observed official ZIP identifier; not current USPS validity or live inventory proof. Check the linked source.",
+        "status": "We don't have a relevant borrowing source for this object in this area yet."
+      },
+      "overflow": {
+        "scrollWidth": 390,
+        "clientWidth": 390
+      },
+      "mobileUsable": true,
+      "screenshot": ".cibt/pass-013/evidence/stage-b/mobile_exact_outlet_01001.png",
+      "latencyClaim": "Local collector timing is observational only and does not predict internet latency."
+    }
+  ]
+}
