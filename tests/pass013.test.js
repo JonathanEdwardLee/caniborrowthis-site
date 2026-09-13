@@ -63,6 +63,9 @@ describe('P13-03 GEO-equivalent 151 centers', () => {
     assert.equal(verification.report.geoFail, 0);
     for (const row of geoRows) {
       assert.notEqual(row.targetKind, 'no_zip', row.place);
+      assert.equal(row.nearestOutletKind, 'national_outlet', row.place);
+      assert.equal(row.nearestOutletRouteClass, 'GEO_NEAREST_ACTIVE_OUTLET', row.place);
+      assert.equal(row.permissionedNote, true, row.place);
       assert.equal(row.status, 'PASS', JSON.stringify(row.failures));
     }
   });

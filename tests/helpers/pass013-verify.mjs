@@ -8,7 +8,7 @@ import { RESULT_CLASS, getAllSources, PILOT_ZIPS } from '../../js/data.js';
 import { bridgeEventToGa4, FORBIDDEN_GA_KEYS } from '../../js/measure.js';
 import {
   buildNationalFallbackSource,
-  lookupZipRoute,
+  resolveNationalGeoTarget,
 } from '../../js/national-routing.js';
 import { searchWithNational, preloadNationalData } from './national.mjs';
 
@@ -193,36 +193,33 @@ async function geoSearch(objectText, lat, lon) {
   return { target, out };
 }
 
-function failuresFromGeo(center, target, out) {
+function failuresFromGeo(center, target, out, nationalTarget, nationalNote) {
   const failures = [];
   const label = `GEO|${center.state}|${center.place_name}`;
   if (!target || target.kind === 'no_zip') {
-    failures.push(`${label}: nearest-outlet / GEO routing did not resolve`);
+    failures.push(`${label}: product GEO routing did not resolve`);
+  }
+  if (!nationalTarget || nationalTarget.kind !== 'national_outlet') {
+    failures.push(`${label}: nearest-outlet routing did not resolve`);
   }
   const blob = collectText(out);
   if (AVAILABILITY_CLAIM.test(blob)) {
     failures.push(`${label}: unsupported availability claim`);
   }
-  if (/reverse[- ]?geocod/i.test(blob)) {
+  if (/reverse[- ]?geocod/i.test(blob) || /reverse[- ]?geocod/i.test(nationalNote || '')) {
     failures.push(`${label}: false reverse-geocoded ZIP display`);
   }
-  if (target.kind === 'national_outlet') {
-    if (!/permissioned location/i.test(blob)) {
-      failures.push(`${label}: wording does not reflect permissioned-location context`);
-    }
-    if (/Census|ZCTA/i.test(blob)) {
-      failures.push(`${label}: GEO wording leaked Census/ZCTA ZIP semantics`);
-    }
-    if (/inventory proof|eligibility proof|in stock/i.test(blob) && !/not eligibility|not .*inventory proof/i.test(blob)) {
-      failures.push(`${label}: nearest outlet implied eligibility/inventory proof`);
-    }
+  if (!/permissioned location/i.test(nationalNote || '')) {
+    failures.push(`${label}: wording does not reflect permissioned-location context`);
   }
-  if (out.status !== 'ok' || (target.kind !== 'national' && !out.results?.length)) {
-    if (target.kind !== 'national' || !out.results?.length) {
-      if (target.kind !== 'national') {
-        failures.push(`${label}: no source/place to check returned`);
-      }
-    }
+  if (/Census|ZCTA/i.test(nationalNote || '')) {
+    failures.push(`${label}: GEO wording leaked Census/ZCTA ZIP semantics`);
+  }
+  if (!/not eligibility, residency, service-area, or inventory proof/i.test(nationalNote || '')) {
+    failures.push(`${label}: nearest outlet did not remain source/place-to-check only`);
+  }
+  if (out.status !== 'ok' || (!out.results?.length && target.kind !== 'national')) {
+    failures.push(`${label}: no source/place to check returned`);
   }
   return failures;
 }
@@ -291,7 +288,18 @@ export async function runPass013Verification() {
     const lat = Number(center.place_intpt_lat);
     const lon = Number(center.place_intpt_lon);
     const { target, out } = await geoSearch('ukulele', lat, lon);
-    const geoFailures = failuresFromGeo(center, target, out);
+    const nationalTarget = await resolveNationalGeoTarget(lat, lon);
+    const nationalSource =
+      nationalTarget.kind === 'national_outlet'
+        ? await buildNationalFallbackSource(nationalTarget.route)
+        : null;
+    const geoFailures = failuresFromGeo(
+      center,
+      target,
+      out,
+      nationalTarget,
+      nationalSource?.note || '',
+    );
     const status = geoFailures.length ? 'FAIL' : 'PASS';
     if (status === 'PASS') pass += 1;
     else {
@@ -308,7 +316,13 @@ export async function runPass013Verification() {
       targetKind: target?.kind || null,
       targetZip: target?.zip || null,
       targetLabel: target?.label || null,
-      routeClass: target?.nationalRoute?.routeClass || target?.route?.routeClass || null,
+      routeClass: target?.nationalRoute?.routeClass || null,
+      nearestOutletKind: nationalTarget.kind,
+      nearestOutletZip: nationalTarget.zip || null,
+      nearestOutletLabel: nationalTarget.label || null,
+      nearestOutletRouteClass: nationalTarget.route?.routeClass || null,
+      nearestOutletDistanceMi: nationalTarget.distanceMi ?? null,
+      permissionedNote: Boolean(nationalSource?.note?.match(/permissioned location/i)),
       status,
       failures: geoFailures,
     });
@@ -382,7 +396,11 @@ export async function runPass013Verification() {
   const springfieldGeo = geoRows.find((r) => r.tags.includes('springfield_mo'));
   const sparse = geoRows.filter((r) => r.tags.includes('sparse_rural'));
 
-  edge('dense_urban_nyc', nyc?.status === 'PASS' && nyc.targetKind != null, nyc?.targetKind);
+  edge(
+    'dense_urban_nyc',
+    nyc?.status === 'PASS' && nyc.nearestOutletRouteClass === 'GEO_NEAREST_ACTIVE_OUTLET',
+    `${nyc?.targetKind}/${nyc?.nearestOutletRouteClass}`,
+  );
   edge('dense_urban_chicago', chicago?.status === 'PASS', chicago?.targetKind);
   edge('state_border_dc', dc?.status === 'PASS', dc?.targetKind);
   edge('alaska_long_distance', ak?.status === 'PASS', ak?.targetKind);
