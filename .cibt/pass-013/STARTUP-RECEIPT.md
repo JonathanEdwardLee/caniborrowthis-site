@@ -1,0 +1,22 @@
+# CIBT Pass 013 CloudDev startup receipt
+
+- Role: fresh CloudDev session
+- Repository: `JonathanEdwardLee/caniborrowthis-site` only
+- Controlling PR: **#14**
+- Prepared branch: `primary/cibt-pass013-national-verification-20260913`
+- Prepared head observed: `40a668c13e4e516e035dbbb47f0ea9213cc540b9`
+- Product main/base: `34517eb51c0ae30ba5874135542e8c9eb622f398`
+- Work order: `.cibt/pass-013/WORK-ORDER.md`
+- Accepted matrix: `.cibt/pass-012/transfer/national_centers_151.csv`
+- Matrix bytes: **74,992**
+- Matrix SHA-256: `7730850bb716803b4186bdd334eb0df12b566326edc3c8b676f751e8c4e18ee7`
+- Denominators: **151 centers**, **755 ZIP probes** (151 × 5 categories), **151 GEO-equivalent**
+- Recurring-cost delta: **$0**
+- PR SUBSCRIPTION: **CONFIRMED**
+- Subscription id: `sub_3ce06f29-be47-44ec-ac9b-27f3b33aab03`
+- Mechanism: Cursor `subscribe_github_pr` on `JonathanEdwardLee/caniborrowthis-site` #14
+- Session: https://cursor.com/agents/bc-9c4b62eb-a0e1-485a-aea7-0eac54fb8d19
+- First substantial cohort: DC + Alaska + Hawaii (15 ZIP category probes + 3 GEO-equivalent)
+- Next already-authorized cohort: remaining 148 centers through full 755 + 151 GEO (no hourly wait)
+- Mission: verification-only (tests/scripts/evidence/package wiring)
+- NO MERGE / NO DEPLOY
