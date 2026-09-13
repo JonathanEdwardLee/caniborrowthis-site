@@ -89,11 +89,16 @@ describe('P4-06 ZIP fail-closed public copy', () => {
     assert.equal(out.message, MESSAGES.invalidZip);
   });
 
-  it('unsupported ZIP uses public copy without pilot language', () => {
-    const out = search({ objectText: 'sewing machine', zip: '10001' });
-    assert.equal(out.status, 'error');
-    assert.equal(out.message, MESSAGES.unsupportedZip);
-    assert.match(out.message, /Use my location/);
+  it('unknown well-formed ZIP offers IMLS Search & Compare without pilot language', async () => {
+    const { searchWithNational } = await import('./helpers/national.mjs');
+    const out = await searchWithNational(search, {
+      objectText: 'sewing machine',
+      zip: '99999',
+      locationMode: 'ZIP',
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.some((r) => /IMLS Search & Compare/i.test(r.title)));
+    assert.ok(out.disclaimers.some((d) => /outside our accepted observed reference/i.test(d)));
   });
 });
 
@@ -109,10 +114,16 @@ describe('P4-07 regression: ranking and fail-closed behavior', () => {
     assert.ok(!out.results.some((r) => r.class === RESULT_CLASS.RELEVANT));
   });
 
-  it('90210 manual ZIP still has no invented fallback', () => {
-    const out = search({ objectText: 'pressure washer', zip: '90210' });
-    assert.equal(out.results.length, 0);
-    assert.equal(out.message, MESSAGES.noNearbyEvidence);
+  it('90210 manual ZIP routes to national fallback instead of dead-end', async () => {
+    const { searchWithNational } = await import('./helpers/national.mjs');
+    const out = await searchWithNational(search, {
+      objectText: 'pressure washer',
+      zip: '90210',
+      locationMode: 'ZIP',
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.length >= 1);
+    assert.equal(out.message, MESSAGES.noRelevantSource);
   });
 });
 

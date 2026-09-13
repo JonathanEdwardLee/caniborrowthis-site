@@ -1,0 +1,113 @@
+{
+  "accepted_input_artifact_sha256": {
+    "data/derived/imls_counts.json": "759623ed1a4b643388a6239036e4d32e56708aa43264127ee2cab3b56bc1d5e2",
+    "data/derived/national_population_centers_151.csv": "7730850bb716803b4186bdd334eb0df12b566326edc3c8b676f751e8c4e18ee7",
+    "outputs/manifest.json": "81ee12a22073bf6b4f07f854b7169b564bd6c763e369f90f9b59546a29524e01",
+    "outputs/public_safe/outlets.csv": "3988d27da314bf2b4bf9f57bd37dc993057f86b2addb979e847e7821e75bd7ee",
+    "outputs/public_safe/systems.csv": "ff1b4efd478f381df79c654075474ffeb75515ba27015ac3db80025f8e6e4918",
+    "pin:census_zbp_2023": "109c181205bef49a972935fa059d8b067754cb4a0c2fceff7280b4b3c665e6e8",
+    "pin:gaz26_zcta": "f1e9046b91f6e60686a99343cb2752834c02b0764939403b331c78c017e2c54c",
+    "pin:irs_soi_2022_zip": "1402895408f6648e3ea8c8490afec5d1a797368550c957f64a6aa4093de4b2a6",
+    "sources/manifests/expected_source_hashes.json": "dd14e966348f769ba7919e8394c906d59cece7ffb7b21b5d54be39c463865adb"
+  },
+  "accepted_outlet_count": 17415,
+  "accepted_source_head": "fe0abe8e0ea6e2a93bf60d2e712b4450a50c4dd8",
+  "accepted_system_count": 9200,
+  "api_key_used": false,
+  "artifact_bytes": {
+    "national_centers_151.csv": 74992,
+    "national_destinations.csv": 1414210,
+    "national_geo_outlets.csv": 1446394,
+    "national_transfer_manifest.integrity.json": 354,
+    "national_transfer_manifest.json": 5862,
+    "national_zip_routes.csv": 5048599
+  },
+  "check_date": "2026-09-12",
+  "claims_current_usps_validity": false,
+  "confidence_note_tokens": {
+    "EXACT_OUTLET;NOT_USPS_VALIDITY;NO_INVENTORY": "exact active IMLS outlet ZIP; observed official identifier, not current USPS validity; no live inventory",
+    "EXACT_SYSTEM_ADMIN;NOT_NEARBY_OUTLET;NOT_USPS_VALIDITY;NO_INVENTORY": "exact active IMLS system/admin ZIP; not a physical nearby outlet",
+    "INDIRECT_IMLS_SC;NO_FABRICATED_NEAREST;NOT_REJECTED;NOT_USPS_VALIDITY;NO_INVENTORY": "observed reference with no safe exact or coordinate route; IMLS Search & Compare; do not reject",
+    "ZCTA_NN_HAVERSINE;NOT_ELIGIBILITY;NOT_USPS_VALIDITY;NO_INVENTORY": "2026 ZCTA internal point nearest active outlet by Haversine; not eligibility/residency/service-area/inventory"
+  },
+  "deterministic_output_sha256": {
+    "national_centers_151.csv": "7730850bb716803b4186bdd334eb0df12b566326edc3c8b676f751e8c4e18ee7",
+    "national_destinations.csv": "0ad7ff3b0869c567f1e70a01551b209a19df81a15899b068202fbeb44c1cba42",
+    "national_geo_outlets.csv": "738a7fdd6703a51beb854725076484ba1938d17afc0a95c2441d55eb298c6bfc",
+    "national_zip_routes.csv": "0ed4e3389a6938a28a8d0b963589488d53884327f207a34e52405bdea466b5f7"
+  },
+  "deterministic_routing_rules": {
+    "exact_outlet_tiebreak": "stable lexical (fscskey, fscs_seq); no subjective outlet-type preference",
+    "exact_outlet_zip_before_system_admin_zip": true,
+    "exact_system_tiebreak": "stable lexical fscskey",
+    "no_zip_prefix_state_inference": true,
+    "non_zcta_without_exact_imls": "OBSERVED_REFERENCE_INDIRECT_ONLY; IMLS Search & Compare; no fabricated nearest",
+    "zcta_distance_tiebreak": "first strict-min Haversine after outlets lex-sorted by (fscskey, fscs_seq); stdlib math only",
+    "zcta_nearest": "Haversine R=6371 km from 2026 Gazetteer ZCTA INTPT to accepted IMLS outlet coordinates"
+  },
+  "fresh_source_discovery": false,
+  "hud_login_not_used": true,
+  "imls_search_compare": "https://www.imls.gov/search-compare",
+  "known_limitations": [
+    "Observed official ZIP-reference identifiers are not a complete or current USPS ZIP universe.",
+    "ZCTA-nearest routing is straight-line context only; not eligibility, residency, service-area, or inventory proof.",
+    "Exact system-admin ZIP is not a physical nearby outlet.",
+    "FY2024 PUD has no website field; destinations remain accepted frozen/official handoffs plus IMLS Search & Compare.",
+    "No live inventory or current-availability claim.",
+    "Ozarks accepted artifacts were not modified in this packaging pass."
+  ],
+  "live_inventory_claim": false,
+  "national_center_count": 151,
+  "new_recurring_cost_usd": 0,
+  "no_merge": true,
+  "no_self_acceptance": true,
+  "numpy_used": false,
+  "observed_reference_zips_lacking_zcta": 4074,
+  "observed_zip_reference_count": 37865,
+  "ozarks_accepted_artifacts_unmodified": true,
+  "package_byte_sizes": {
+    "national_centers_151.csv": 74992,
+    "national_destinations.csv": 1414210,
+    "national_geo_outlets.csv": 1446394,
+    "national_transfer_manifest.integrity.json": 354,
+    "national_transfer_manifest.json": 5862,
+    "national_zip_routes.csv": 5048599
+  },
+  "packet": "CIBT-NATIONAL-TRANSFER-002",
+  "parent_packet": "CIBT-RESEARCH-SPINE-001",
+  "repository_boundary": "JonathanEdwardLee/caniborrowthis-research only",
+  "rights": {
+    "acs_summary_file": "PUBLIC_USE",
+    "census_gazetteer": "PUBLIC_USE",
+    "census_popest": "PUBLIC_USE",
+    "census_zbp": "PUBLIC_USE",
+    "gnis": "PUBLIC_USE",
+    "imls_pls": "PUBLIC_USE",
+    "irs_soi": "PUBLIC_USE",
+    "library_program_pages": "LINK_ONLY unless U.S. government page"
+  },
+  "route_class_counts": {
+    "EXACT_IMLS_OUTLET_ZIP": 15300,
+    "EXACT_IMLS_SYSTEM_ZIP": 49,
+    "OBSERVED_REFERENCE_INDIRECT_ONLY": 3980,
+    "ZCTA_NEAREST_ACTIVE_OUTLET": 18536
+  },
+  "row_counts": {
+    "national_centers_151.csv": 151,
+    "national_destinations.csv": 9200,
+    "national_geo_outlets.csv": 17415,
+    "national_zip_routes.csv": 37865
+  },
+  "size_boundary": {
+    "note": "transfer-size target not a permission to omit required identities/routes",
+    "target_bytes": 8388608,
+    "total_deterministic_bytes": 7990411,
+    "within_8_mib_target": true
+  },
+  "states_plus_dc_represented": 51,
+  "stdlib_only": true,
+  "terminal_state": "READY_FOR_PRIMARY_REVIEW",
+  "total_deterministic_bytes": 7990411,
+  "usps_paid_product_not_used": true,
+  "zcta_count": 33791
+}

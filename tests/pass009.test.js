@@ -76,7 +76,7 @@ describe('P9-03 no malformed analytics URL syntax', () => {
 });
 
 describe('P9-04 GA4 bridge emits only approved coarse fields', () => {
-  it('search_submitted maps approved parameters only', () => {
+  it('search_submitted maps approved parameters only', async () => {
     const calls = captureGaCalls((gtag) => {
       bridgeEventToGa4(
         {
@@ -100,7 +100,7 @@ describe('P9-04 GA4 bridge emits only approved coarse fields', () => {
     assertNoForbiddenFields(eventPayloads(calls)[0]);
   });
 
-  it('results_rendered maps approved count parameters only', () => {
+  it('results_rendered maps approved count parameters only', async () => {
     const calls = captureGaCalls((gtag) => {
       bridgeEventToGa4(
         {
@@ -120,7 +120,7 @@ describe('P9-04 GA4 bridge emits only approved coarse fields', () => {
     assertNoForbiddenFields(calls[0][2]);
   });
 
-  it('outbound_clicked maps approved parameters only', () => {
+  it('outbound_clicked maps approved parameters only', async () => {
     const calls = captureGaCalls((gtag) => {
       bridgeEventToGa4(
         {
@@ -138,7 +138,7 @@ describe('P9-04 GA4 bridge emits only approved coarse fields', () => {
     assertNoForbiddenFields(calls[0][2]);
   });
 
-  it('location_permission_result maps result only', () => {
+  it('location_permission_result maps result only', async () => {
     const calls = captureGaCalls((gtag) => {
       bridgeEventToGa4({ type: 'location_permission_result', result: 'DENIED' }, gtag);
     });
@@ -146,7 +146,7 @@ describe('P9-04 GA4 bridge emits only approved coarse fields', () => {
     assertNoForbiddenFields(calls[0][2]);
   });
 
-  it('measure hooks bridge through emit without raw query fields', () => {
+  it('measure hooks bridge through emit without raw query fields', async () => {
     const calls = captureGaCalls((gtag) => {
       const originalGtag = globalThis.gtag;
       globalThis.gtag = gtag;
@@ -172,7 +172,7 @@ describe('P9-04 GA4 bridge emits only approved coarse fields', () => {
     }
   });
 
-  it('onMeasure listeners still receive internal events', () => {
+  it('onMeasure listeners still receive internal events', async () => {
     const captured = [];
     onMeasure((event) => captured.push(event));
     const originalGtag = globalThis.gtag;
@@ -191,8 +191,8 @@ describe('P9-04 GA4 bridge emits only approved coarse fields', () => {
 });
 
 describe('P9-05 Pass-008 routing and GEO ZIP trust regressions', () => {
-  it('Springfield GEO pressure washer routes to S7', () => {
-    const target = resolveGeoSearchTarget(
+  it('Springfield GEO pressure washer routes to S7', async () => {
+    const target = await resolveGeoSearchTarget(
       SPRINGFIELD_COORDS.lat,
       SPRINGFIELD_COORDS.lon,
       'pressure washer',
@@ -208,8 +208,8 @@ describe('P9-05 Pass-008 routing and GEO ZIP trust regressions', () => {
     assert.equal(out.results[0].sourceId, 'S7_SPRINGFIELD_TOOL_LIBRARY');
   });
 
-  it('Springfield GEO 3D printer routes to S8 with on-site wording', () => {
-    const target = resolveGeoSearchTarget(
+  it('Springfield GEO 3D printer routes to S8 with on-site wording', async () => {
+    const target = await resolveGeoSearchTarget(
       SPRINGFIELD_COORDS.lat,
       SPRINGFIELD_COORDS.lon,
       '3D printer',
@@ -227,8 +227,8 @@ describe('P9-05 Pass-008 routing and GEO ZIP trust regressions', () => {
     );
   });
 
-  it('Mountain Home GEO telescope routes to S9', () => {
-    const target = resolveGeoSearchTarget(
+  it('Mountain Home GEO telescope routes to S9', async () => {
+    const target = await resolveGeoSearchTarget(
       MOUNTAIN_HOME_COORDS.lat,
       MOUNTAIN_HOME_COORDS.lon,
       'telescope',
@@ -243,7 +243,7 @@ describe('P9-05 Pass-008 routing and GEO ZIP trust regressions', () => {
     assert.equal(out.results[0].sourceId, 'S9_BAXTER_SPECIAL_COLLECTIONS');
   });
 
-  it('manual ZIP 72653 fishing pole routes to S9', () => {
+  it('manual ZIP 72653 fishing pole routes to S9', async () => {
     const out = search({ objectText: 'fishing pole', zip: '72653', locationMode: 'ZIP' });
     assert.equal(out.results[0].sourceId, 'S9_BAXTER_SPECIAL_COLLECTIONS');
   });
@@ -271,31 +271,31 @@ describe('P9-07 founder-approved Analytics disclosure', () => {
   });
 });
 
-describe('P9-06 pass011 release identity and dependency state', () => {
-  it('index.html and runtime imports use pass011', async () => {
+describe('P9-06 pass012 release identity and dependency state', () => {
+  it('index.html and runtime imports use pass012', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /cibt-release" content="pass011"/);
-    assert.match(html, /styles\.css\?v=pass011/);
-    assert.match(html, /app\.js\?v=pass011/);
+    assert.match(html, /cibt-release" content="pass012"/);
+    assert.match(html, /styles\.css\?v=pass012/);
+    assert.match(html, /app\.js\?v=pass012/);
   });
 
-  it('every relative runtime .js import uses pass011 version query', async () => {
+  it('every relative runtime .js import uses pass012 version query', async () => {
     const importPattern = /from\s+['"](\.\/[^'"]+\.js(?:\?[^'"]*)?)['"]/g;
     for (const name of (await readdir(JS_DIR)).filter((entry) => entry.endsWith('.js'))) {
       const relPath = join('js', name);
       const content = await readFile(join(root, relPath), 'utf8');
       for (const [, specifier] of content.matchAll(importPattern)) {
-        assert.match(specifier, /\.js\?v=pass011$/, `${relPath} import "${specifier}"`);
+        assert.match(specifier, /\.js\?v=pass012$/, `${relPath} import "${specifier}"`);
       }
     }
   });
 
-  it('release.js exports pass011 identity', () => {
-    assert.equal(CIBT_RELEASE.pass, 'pass011');
-    assert.equal(CIBT_RELEASE.version, 'pass011');
+  it('release.js exports pass012 identity', async () => {
+    assert.equal(CIBT_RELEASE.pass, 'pass012');
+    assert.equal(CIBT_RELEASE.version, 'pass012');
   });
 
-  it('Playwright remains exact 1.62.1', () => {
+  it('Playwright remains exact 1.62.1', async () => {
     assert.equal(packageJson.devDependencies.playwright, '1.62.1');
   });
 });

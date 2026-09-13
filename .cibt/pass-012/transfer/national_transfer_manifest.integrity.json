@@ -1,0 +1,6 @@
+{
+  "national_transfer_manifest.json_bytes": 5862,
+  "national_transfer_manifest.json_sha256": "c0fc6e440ac9073e2fc7d09fd333d20a90b6deb305e03ba127e6314587b42a21",
+  "packet": "CIBT-NATIONAL-TRANSFER-002",
+  "role": "verification sidecar: SHA-256 of national_transfer_manifest.json after size convergence; avoids circular self-hash inside the manifest"
+}

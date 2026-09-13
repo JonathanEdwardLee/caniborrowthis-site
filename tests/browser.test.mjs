@@ -58,7 +58,7 @@ describe('P4-01 browser intro copy', () => {
     assert.match(body, /Library of Things/i);
     assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
 
-    await page.screenshot({ path: '/workspace/evidence/pass011-desktop-intro.png', fullPage: true });
+    await page.screenshot({ path: '/workspace/evidence/pass012-desktop-intro.png', fullPage: true });
     await browser.close();
   });
 });
@@ -98,7 +98,7 @@ describe('SC-08 browser geolocation denied', () => {
 });
 
 describe('P5-04 browser release marker and distant geo verification', () => {
-  it('exposes pass011 marker and continues distant geo search without outside-limit dead end', async () => {
+  it('exposes pass012 marker and continues distant geo search without outside-limit dead end', async () => {
     const browser = await chromium.launch();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -111,11 +111,11 @@ describe('P5-04 browser release marker and distant geo verification', () => {
 
     await page.goto(ctx.baseUrl);
     const marker = await page.locator('#cibt-release-marker');
-    assert.equal(await marker.getAttribute('data-release'), 'pass011');
+    assert.equal(await marker.getAttribute('data-release'), 'pass012');
     assert.equal(await marker.getAttribute('data-commit'), null);
 
     const metaRelease = await page.locator('meta[name="cibt-release"]').getAttribute('content');
-    assert.equal(metaRelease, 'pass011');
+    assert.equal(metaRelease, 'pass012');
 
     await page.selectOption('#object-input', 'OBD-II scanner');
     await page.click('#locate-btn');
@@ -213,7 +213,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(await page.locator('.result-card').first().innerText(), /Laverne Schell Tool Library/i);
     assert.equal(await page.locator('#zip-input').inputValue(), '');
     await page.screenshot({
-      path: '/workspace/evidence/pass011-mobile-springfield-pressure-washer-geo.png',
+      path: '/workspace/evidence/pass012-mobile-springfield-pressure-washer-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -239,7 +239,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(cardText, /Maker Space/i);
     assert.match(cardText, /On-site equipment resource — not a take-home loan/i);
     await page.screenshot({
-      path: '/workspace/evidence/pass011-mobile-springfield-3d-printer-geo.png',
+      path: '/workspace/evidence/pass012-mobile-springfield-3d-printer-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -264,7 +264,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.equal(await page.locator('#zip-input').inputValue(), '');
     assert.equal(await page.locator('#object-input').inputValue(), 'telescope');
     await page.screenshot({
-      path: '/workspace/evidence/pass011-mobile-mountain-home-telescope-geo.png',
+      path: '/workspace/evidence/pass012-mobile-mountain-home-telescope-geo.png',
       fullPage: true,
     });
     await browser.close();
@@ -282,7 +282,7 @@ describe('P8 browser Springfield and Mountain Home coverage evidence', () => {
     assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
     assert.equal(await page.locator('#zip-input').inputValue(), '72653');
     await page.screenshot({
-      path: '/workspace/evidence/pass011-mobile-72653-fishing-pole-zip.png',
+      path: '/workspace/evidence/pass012-mobile-72653-fishing-pole-zip.png',
       fullPage: true,
     });
     await browser.close();
@@ -338,7 +338,7 @@ describe('P10 browser guided discovery and explainer', () => {
     assert.match(await page.locator('#cibt-explainer').innerText(), /Borrow before you buy/i);
 
     await page.screenshot({
-      path: '/workspace/evidence/pass011-mobile-default-telescope-search.png',
+      path: '/workspace/evidence/pass012-mobile-default-telescope-search.png',
       fullPage: true,
     });
     await browser.close();
@@ -421,7 +421,7 @@ describe('P11 browser Ozarks coverage evidence', () => {
     await page.waitForSelector('.result-card');
     assert.match(await page.locator('.result-card').first().innerText(), /Laverne Schell Tool Library/i);
     await page.screenshot({
-      path: '/workspace/evidence/pass011-springfield-specialist.png',
+      path: '/workspace/evidence/pass012-springfield-specialist.png',
       fullPage: true,
     });
     await browser.close();
@@ -437,7 +437,7 @@ describe('P11 browser Ozarks coverage evidence', () => {
     await page.waitForSelector('.result-card');
     assert.match(await page.locator('.result-card').first().innerText(), /Baxter County Library/i);
     await page.screenshot({
-      path: '/workspace/evidence/pass011-mountain-home-specialist.png',
+      path: '/workspace/evidence/pass012-mountain-home-specialist.png',
       fullPage: true,
     });
     await browser.close();
@@ -456,7 +456,7 @@ describe('P11 browser Ozarks coverage evidence', () => {
     assert.match(text, /ask\/check/i);
     assert.doesNotMatch(text, /available now|in stock/i);
     await page.screenshot({
-      path: '/workspace/evidence/pass011-lampe-generic-fallback.png',
+      path: '/workspace/evidence/pass012-lampe-generic-fallback.png',
       fullPage: true,
     });
     await browser.close();
@@ -473,24 +473,41 @@ describe('P11 browser Ozarks coverage evidence', () => {
     assert.match(text, /Eureka Springs|Arkansas State Library/i);
     assert.doesNotMatch(text, /available now|in stock/i);
     await page.screenshot({
-      path: '/workspace/evidence/pass011-eureka-springs.png',
+      path: '/workspace/evidence/pass012-eureka-springs.png',
       fullPage: true,
     });
     await browser.close();
   });
 
-  it('unsupported well-formed ZIP is not treated as malformed', async () => {
+  it('unknown well-formed ZIP offers IMLS Search & Compare, not malformed error', async () => {
     const browser = await chromium.launch();
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     await page.goto(ctx.baseUrl);
     await page.fill('#zip-input', '99999');
     await page.click('button[type="submit"]');
-    await page.waitForSelector('#status-message:not([hidden])');
+    await page.waitForSelector('.result-card');
     const status = await page.locator('#status-message').textContent();
-    assert.match(status, /don't cover that ZIP yet/i);
     assert.doesNotMatch(status, /valid 5-digit ZIP/i);
+    const title = await page.locator('.result-title').first().textContent();
+    assert.match(title, /IMLS Search & Compare/i);
     await page.screenshot({
-      path: '/workspace/evidence/pass011-unsupported-zip.png',
+      path: '/workspace/evidence/pass012-unknown-zip-imls.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+
+  it('national generic fallback renders for dense urban ZIP', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    await page.fill('#zip-input', '10002');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    const title = await page.locator('.result-title').first().textContent();
+    assert.match(title, /official page to ask\/check/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass012-national-fallback-nyc-desktop.png',
       fullPage: true,
     });
     await browser.close();
@@ -509,9 +526,118 @@ describe('P11 browser Ozarks coverage evidence', () => {
     }));
     assert.ok(overflow.scrollWidth <= overflow.clientWidth);
     await page.screenshot({
-      path: '/workspace/evidence/pass011-mobile-lampe.png',
+      path: '/workspace/evidence/pass012-mobile-lampe.png',
       fullPage: true,
     });
+    await browser.close();
+  });
+
+  it('former noApprovedSource pilot ZIP 90210 renders national fallback in browser', async () => {
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(ctx.baseUrl);
+    await page.selectOption('#object-input', 'pressure washer');
+    await page.fill('#zip-input', '90210');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    const status = await page.locator('#status-message').textContent();
+    assert.doesNotMatch(status, /valid 5-digit ZIP/i);
+    const note = await page.locator('.result-note').first().textContent();
+    assert.doesNotMatch(note, /Census|ZCTA/i);
+    await page.screenshot({
+      path: '/workspace/evidence/pass012-90210-national-fallback.png',
+      fullPage: true,
+    });
+    await browser.close();
+  });
+});
+
+describe('P12-09 lazy-load network evidence', () => {
+  function nationalJsonRequests(requests) {
+    return requests.filter((url) => /\/js\/national\/.*\.json(?:\?|$)/.test(url));
+  }
+
+  it('initial page load requests no national JSON assets', async () => {
+    const requests = [];
+    const browser = await chromium.launch();
+    const page = await browser.newPage();
+    page.on('request', (request) => requests.push(request.url()));
+    await page.goto(ctx.baseUrl);
+    await page.waitForSelector('#search-form');
+    const nationalJson = nationalJsonRequests(requests);
+    assert.equal(nationalJson.length, 0);
+    await browser.close();
+  });
+
+  it('manual national ZIP search loads only required prefix chunk and lookup assets', async () => {
+    const requests = [];
+    const responseBytes = [];
+    const browser = await chromium.launch();
+    const page = await browser.newPage();
+    page.on('request', (request) => requests.push(request.url()));
+    page.on('response', async (response) => {
+      if (response.url().includes('/js/national/') && response.url().endsWith('.json')) {
+        const body = await response.body();
+        responseBytes.push({ url: response.url(), bytes: body.length });
+      }
+    });
+    await page.goto(ctx.baseUrl);
+    await page.fill('#zip-input', '10002');
+    await page.click('button[type="submit"]');
+    await page.waitForSelector('.result-card');
+    await page.waitForTimeout(500);
+
+    const nationalJson = nationalJsonRequests(requests);
+    assert.ok(nationalJson.some((url) => url.includes('/js/national/routes/10.json')));
+    assert.ok(nationalJson.some((url) => url.includes('/js/national/destinations.json')));
+    assert.ok(nationalJson.some((url) => url.includes('/js/national/outlets.json')));
+    assert.ok(!nationalJson.some((url) => url.includes('/js/national/routes/00.json')));
+    assert.ok(!nationalJson.some((url) => url.includes('/js/national/routes/99.json')));
+
+    const transferredBytes = responseBytes.reduce((sum, entry) => sum + entry.bytes, 0);
+    assert.ok(transferredBytes > 0);
+    assert.ok(transferredBytes < 6_000_000);
+
+    await browser.close();
+  });
+
+  it('GEO loads outlet lookup assets only when GEO is used', async () => {
+    const requests = [];
+    const browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    page.on('request', (request) => requests.push(request.url()));
+
+    await page.addInitScript(() => {
+      navigator.geolocation.getCurrentPosition = (success) => {
+        success({ coords: { latitude: 40.7589, longitude: -73.9851 } });
+      };
+    });
+
+    await page.goto(ctx.baseUrl);
+    await page.waitForSelector('#search-form');
+    assert.equal(nationalJsonRequests(requests).length, 0);
+
+    await page.evaluate(() => {
+      const select = document.getElementById('object-input');
+      const option = document.createElement('option');
+      option.value = 'chainsaw';
+      option.textContent = 'chainsaw';
+      select.appendChild(option);
+      select.value = 'chainsaw';
+    });
+    await page.click('#locate-btn');
+    await page.waitForSelector('.result-card');
+    await page.waitForTimeout(500);
+
+    const nationalJson = nationalJsonRequests(requests);
+    assert.ok(nationalJson.some((url) => url.includes('/js/national/outlets.json')));
+    assert.ok(nationalJson.some((url) => url.includes('/js/national/destinations.json')));
+    assert.ok(!nationalJson.some((url) => url.includes('/js/national/routes/')));
+    const note = await page.locator('.result-note').first().textContent();
+    assert.match(note, /permissioned location/i);
+    assert.doesNotMatch(note, /Census|ZCTA/i);
+
     await browser.close();
   });
 });

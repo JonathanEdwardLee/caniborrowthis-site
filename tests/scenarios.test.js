@@ -35,8 +35,8 @@ describe('validateZip', () => {
     assert.equal(validateZip('12A45').status, 'INVALID');
   });
 
-  it('rejects unsupported pilot ZIP', () => {
-    assert.equal(validateZip('10001').status, 'UNSUPPORTED');
+  it('rejects well-formed ZIP outside pilot coverage as WELL_FORMED', () => {
+    assert.equal(validateZip('10001').status, 'WELL_FORMED');
   });
 
   it('accepts frozen pilot ZIP', () => {
@@ -89,10 +89,17 @@ describe('SC-04 chainsaw + 16693', () => {
 });
 
 describe('SC-05 pressure washer + 90210', () => {
-  it('valid ZIP with honest no-nearby-evidence; no invented fallback', () => {
-    const out = search({ objectText: 'pressure washer', zip: '90210' });
-    assert.equal(out.message, MESSAGES.noNearbyEvidence);
-    assert.equal(out.results.length, 0);
+  it('routes former no-source pilot ZIP to honest national fallback', async () => {
+    const { searchWithNational } = await import('./helpers/national.mjs');
+    const out = await searchWithNational(search, {
+      objectText: 'pressure washer',
+      zip: '90210',
+      locationMode: 'ZIP',
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.length >= 1);
+    assert.ok(out.results.some((r) => /official page to ask\/check/i.test(r.title)));
+    assert.notEqual(out.message, MESSAGES.invalidZip);
   });
 });
 
@@ -106,11 +113,17 @@ describe('SC-06 pressure washer + 12A45', () => {
 });
 
 describe('SC-07 any object + 10001', () => {
-  it('unsupported pilot ZIP message; no guessed location', () => {
-    const out = search({ objectText: 'sewing machine', zip: '10001' });
-    assert.equal(out.status, 'error');
-    assert.equal(out.message, MESSAGES.unsupportedZip);
-    assert.equal(out.results.length, 0);
+  it('observed national ZIP routes to authoritative fallback', async () => {
+    const { searchWithNational } = await import('./helpers/national.mjs');
+    const { search } = await import('../js/search.js');
+    const out = await searchWithNational(search, {
+      objectText: 'sewing machine',
+      zip: '10001',
+      locationMode: 'ZIP',
+    });
+    assert.equal(out.status, 'ok');
+    assert.ok(out.results.some((r) => r.class === 'NEARBY_LIBRARY_TO_ASK'));
+    assert.ok(out.results.some((r) => /official page to ask\/check/i.test(r.title)));
   });
 });
 
