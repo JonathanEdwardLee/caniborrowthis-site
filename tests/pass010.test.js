@@ -12,7 +12,7 @@ import { search } from '../js/search.js';
 import { normalizeObject } from '../js/normalize.js';
 import { resolveGeoSearchTarget } from '../js/geo.js';
 import { CIBT_RELEASE } from '../js/release.js';
-import { OBJECT_OPTIONS, DEFAULT_OBJECT_VALUE } from '../js/object-options.js';
+import { OBJECT_OPTIONS, ITEM_OBJECT_OPTIONS, DEFAULT_OBJECT_VALUE, EXPLORE_ALL_VALUE } from '../js/object-options.js';
 import { SOURCES, SPRINGFIELD_MO_ZIPS } from '../js/data.js';
 import packageJson from '../package.json' with { type: 'json' };
 
@@ -37,17 +37,20 @@ function reviewedObjectClasses() {
 }
 
 describe('P10-01 guided object selector', () => {
-  it('defaults to telescope', async () => {
+  it('defaults to All / explore nearby', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
     assert.match(html, /<select id="object-input"/);
     assert.doesNotMatch(html, /id="search-ideas"/);
-    assert.equal(DEFAULT_OBJECT_VALUE, 'telescope');
+    assert.equal(DEFAULT_OBJECT_VALUE, EXPLORE_ALL_VALUE);
   });
 
   it('lists only reviewed supported object families with canonical values', async () => {
     const reviewed = reviewedObjectClasses();
-    assert.equal(OBJECT_OPTIONS.length, reviewed.size);
-    for (const opt of OBJECT_OPTIONS) {
+    assert.equal(ITEM_OBJECT_OPTIONS.length, 35);
+    assert.equal(ITEM_OBJECT_OPTIONS.length, reviewed.size);
+    assert.equal(OBJECT_OPTIONS.length, 36);
+    assert.equal(OBJECT_OPTIONS[0].value, EXPLORE_ALL_VALUE);
+    for (const opt of ITEM_OBJECT_OPTIONS) {
       assert.ok(reviewed.has(opt.objectClass), `missing reviewed class ${opt.objectClass}`);
       const norm = normalizeObject(opt.value);
       assert.equal(norm.status, 'SUPPORTED');
@@ -55,10 +58,10 @@ describe('P10-01 guided object selector', () => {
     }
   });
 
-  it('search works with default telescope without typing', async () => {
+  it('search works with default All without typing an item', async () => {
     const out = search({ objectText: DEFAULT_OBJECT_VALUE, zip: '01103', locationMode: 'ZIP' });
     assert.equal(out.status, 'ok');
-    assert.equal(out.objectClass, 'TELESCOPE');
+    assert.equal(out.objectClass, 'BROWSE_ALL');
     assert.ok(out.results.length >= 1);
   });
 
@@ -197,12 +200,12 @@ describe('P10-04 Pass-009 analytics and disclosure preservation', () => {
   });
 });
 
-describe('P10-05 pass012 release identity and dependency state', () => {
-  it('index.html and runtime imports use pass012', async () => {
+describe('P10-05 pass013 release identity and dependency state', () => {
+  it('index.html and runtime imports use pass013', async () => {
     const html = await readFile(join(root, 'index.html'), 'utf8');
-    assert.match(html, /cibt-release" content="pass012"/);
-    assert.match(html, /styles\.css\?v=pass012/);
-    assert.match(html, /app\.js\?v=pass012/);
+    assert.match(html, /cibt-release" content="pass013"/);
+    assert.match(html, /styles\.css\?v=pass013/);
+    assert.match(html, /app\.js\?v=pass013/);
   });
 
   it('every relative runtime .js import uses pass012 version query', async () => {
@@ -211,14 +214,14 @@ describe('P10-05 pass012 release identity and dependency state', () => {
       const relPath = join('js', name);
       const content = await readFile(join(root, relPath), 'utf8');
       for (const [, specifier] of content.matchAll(importPattern)) {
-        assert.match(specifier, /\.js\?v=pass012$/, `${relPath} import "${specifier}"`);
+        assert.match(specifier, /\.js\?v=pass013$/, `${relPath} import "${specifier}"`);
       }
     }
   });
 
-  it('release.js exports pass012 identity', async () => {
-    assert.equal(CIBT_RELEASE.pass, 'pass012');
-    assert.equal(CIBT_RELEASE.version, 'pass012');
+  it('release.js exports pass013 identity', async () => {
+    assert.equal(CIBT_RELEASE.pass, 'pass013');
+    assert.equal(CIBT_RELEASE.version, 'pass013');
   });
 
   it('Playwright remains exact 1.62.1', async () => {

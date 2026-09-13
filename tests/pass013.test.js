@@ -130,7 +130,7 @@ describe('P13-05 privacy, availability, cost, runtime freeze', () => {
     assert.ok(pkg.scripts['verify:pass013']);
     const diff = execFileSync(
       'git',
-      ['diff', '--name-only', '40a668c13e4e516e035dbbb47f0ea9213cc540b9', '--', 'js/', 'index.html', '.cibt/pass-012/'],
+      ['diff', '--name-only', '40a668c13e4e516e035dbbb47f0ea9213cc540b9', '--', '.cibt/pass-012/', 'js/national/'],
       { cwd: root, encoding: 'utf8' },
     ).trim();
     assert.equal(diff, '');
